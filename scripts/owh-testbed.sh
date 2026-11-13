@@ -36,15 +36,16 @@ guard_names() {
 exists_container() { docker container inspect "$NAME" >/dev/null 2>&1; }
 exists_volume() { docker volume inspect "$VOLUME" >/dev/null 2>&1; }
 
+# A cold first start downloads about 1.1 GB of embedding model before /health answers.
 wait_healthy() {
 	local _
-	for _ in $(seq 1 120); do
+	for _ in $(seq 1 300); do
 		if curl -fsS -m 2 "$URL/health" >/dev/null 2>&1; then
 			return 0
 		fi
 		sleep 1
 	done
-	die "no /health from $URL after 120 s (docker logs $NAME)"
+	die "no /health from $URL after 300 s (docker logs $NAME)"
 }
 
 # POST JSON read from stdin, so passwords never appear in argv.
@@ -69,6 +70,7 @@ cmd_up() {
 			docker start "$NAME" >/dev/null
 		fi
 		wait_healthy
+		ensure_admin
 		echo "owh-testbed: already up at $URL"
 		return 0
 	fi
@@ -96,6 +98,14 @@ cmd_up() {
 		"$IMAGE" >/dev/null
 	rm -f "$envfile"
 	wait_healthy
+	ensure_admin
+	echo "owh-testbed: up at $URL (admin $ADMIN_EMAIL, password in $PASS_FILE)"
+}
+
+# Also run on an existing container, so an earlier `up` that timed out still gets its admin.
+ensure_admin() {
+	mkdir -p "$STATE_DIR"
+	chmod 700 "$STATE_DIR"
 	if [[ ! -s "$PASS_FILE" ]]; then
 		(
 			umask 077
@@ -109,7 +119,6 @@ print(json.dumps({"name": "OWH Test", "email": sys.argv[1], "password": open(sys
 ' "$ADMIN_EMAIL" "$PASS_FILE" | post_json /api/v1/auths/signup >/dev/null 2>&1; then
 		admin_token >/dev/null || die "admin signup and signin both failed"
 	fi
-	echo "owh-testbed: up at $URL (admin $ADMIN_EMAIL, password in $PASS_FILE)"
 }
 
 cmd_down() {
