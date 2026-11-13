@@ -13,6 +13,8 @@ Locked in `uv.lock`; installed by `uv sync` for tests and linting, never shipped
 | pygments | BSD-2-Clause | pytest dependency |
 | colorama | BSD-3-Clause | pytest dependency (Windows only) |
 | ruff | MIT | linter and formatter |
+| pytest-cov | MIT | coverage plugin for pytest (Phase 04) |
+| coverage | Apache-2.0 | pytest-cov dependency |
 
 Open WebUI (the container image `ghcr.io/open-webui/open-webui`) and OpenRouter (a hosted API) are external software and services that OWH configures and calls. They are not part of this repository and are governed by their own licences and terms.
 

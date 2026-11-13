@@ -4,10 +4,13 @@
 - The OpenRouter key is a secret. It is **never** written in the repo, logs, shell history, process arguments or `docker inspect` output. The tool reads it only from a hidden prompt or from its 0600 key file.
 - It is stored at `~/.config/owh/openrouter.key` (directory mode 0700, file mode 0600). It is a **new, dedicated** key for Open WebUI, separate from the key Claude Code's provider switch uses (`~/.config/ai-provider/openrouter.key`), and carries its own spending limit set on openrouter.ai.
 - Output shows at most the first 9 characters and the length.
-- The admin password for Open WebUI is read at a hidden prompt; the session token is kept in memory for one run only.
+- The admin password for Open WebUI is read at a hidden prompt (or one line on stdin with `--password-stdin`); the session token is kept in memory for one run only. Neither is ever stored.
+- Every line the tool prints or logs passes through a scrubber that removes the key, password and token seen in that run, plus anything shaped like `sk-or-v1-…` or a JWT. HTTP errors carry only a short, scrubbed message (ADR-0016).
+- The tool never follows redirects (an `Authorization` header cannot be forwarded to another host). It talks only to a loopback Open WebUI unless `--allow-remote` is given, and sends the key to OpenRouter only over https. The model list is fetched without the key.
+- `~/.local/state/owh/owh.log` (0600) gets one line per run: time, command, result, the key's first 9 characters.
 
 ## Where the key ends up
-After `apply`, the key also lives in Open WebUI's `webui.db` (config table), and so in every later backup of the `open-webui` volume (`~/.local/share/open-webui-upgrade/backups/` and any manual backup copy). Never copy those into `~/Documents` (it syncs to Drive). Pre-apply snapshots in `~/.local/state/owh/` are 0600.
+After `apply`, the key also lives in Open WebUI's `webui.db` (config table), and so in every later backup of the `open-webui` volume (`~/.local/share/open-webui-upgrade/backups/` and any manual backup copy). Never copy those into `~/Documents` (it syncs to Drive). Pre-apply snapshots in `~/.local/state/owh/snapshots/` (directory 0700, files 0600) hold the prior connection config, including any key it had, and are kept after `remove`. Delete them by hand once you no longer need to undo.
 
 `GET /openai/config` returns connection keys in clear text to any Open WebUI admin session, so the tool never prints or logs that response unredacted.
 

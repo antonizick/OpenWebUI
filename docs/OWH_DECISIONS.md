@@ -18,6 +18,9 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 | ADR-0012 | 2026-11-13 12:06 CST | Keep Open WebUI's built-in OpenRouter attribution headers; no custom `headers` by default (R9 corrected) | Accepted | 03 |
 | ADR-0013 | 2026-11-13 12:06 CST | Validate the key with OpenRouter `GET /api/v1/key`, never via `/models` or Open WebUI `/openai/verify` | Accepted | 03 |
 | ADR-0014 | 2026-11-13 12:16 CST | OpenRouter allowlist: eight models (owner question 1) | Accepted | between 03 and 04 |
+| ADR-0015 | 2026-11-13 12:35 CST | `remove` restores only OWH's slot; snapshots are scoped to the Open WebUI URL | Accepted | 04 |
+| ADR-0016 | 2026-11-13 12:35 CST | CLI secret handling: hidden prompt or stdin/0600 file only, scrub every output line, no redirects | Accepted | 04 |
+| ADR-0017 | 2026-11-13 12:35 CST | `apply` keeps hand-made settings: an existing local task model and extra per-connection fields | Accepted | 04 |
 ---
 
 ## ADR-0001: Project prefix `OWH`
@@ -133,3 +136,29 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 | `z-ai/glm-5.3-flash` | cheapest output (added by Nick) | 1,048,576 | 0.040 | 0.078 |
 
 **Consequences.** Phase 05 writes these IDs to `config/openrouter-models.txt` and checks them with `owh-openrouter models` (prices are re-fetched then). The free model is rate-limited and its providers may log prompts, depending on owner question 3. `deepseek/deepseek-v4.1-flash-1017` is a dated snapshot and may be retired; `models` flags unknown IDs.
+
+## ADR-0015: Surgical `remove`, snapshots scoped to one Open WebUI
+**Recorded.** 2026-11-13 12:35 CST (Phase 04)
+**Context.** `remove` must restore the pre-OWH values exactly (S7), but between `apply` and `remove` Nick may add another connection or change the task settings in the UI. Restoring the whole snapshot would silently undo those. Phase 05 also rehearses on the testbed with the same `~/.local/state/owh/`, so "the earliest snapshot" could be one taken of the testbed.
+**Options considered.** (a) Write the whole snapshot back. (b) Restore only what OWH changed: its connection slot, `ENABLE_OPENAI_API` and `TASK_MODEL_EXTERNAL`. Separately: a state dir per instance, or a `webui_url` field in each snapshot.
+**Decision.** (b). Each snapshot records `webui_url`, the OpenRouter `url`, the `slot` and the `mode` (`replace`, `append` or `update`) plus the full prior OpenAI and task configs. `remove` finds the OpenRouter connection by URL (wherever it is now), puts back the snapshot's entry for a `replace`/`update` slot or deletes it (re-indexing `OPENAI_API_CONFIGS`) for `append`, restores `ENABLE_OPENAI_API` and `TASK_MODEL_EXTERNAL`, and leaves everything else as it is now. By default it uses the earliest snapshot **of the same Open WebUI URL**; `--snapshot FILE` picks another (a one-step rollback), and a snapshot of a different URL is refused (exit 3). Snapshots are kept.
+**Consequences.** If nothing else changed, the result equals the snapshot. On the testbed all 403 `config` rows matched byte-for-byte (`key`, `value`) after apply → no-op apply → remove. Connections Nick adds after OWH survive `remove`. A second `remove` is a no-op.
+
+## ADR-0016: Secret handling in the CLI
+**Recorded.** 2026-11-13 12:35 CST (Phase 04)
+**Context.** Spec S1–S2: the key, the admin password and the session token must never reach argv, env, logs, exceptions or output. Tests and the Phase 05 rehearsal need a non-interactive way in.
+**Decision.**
+- Secrets come in only through `getpass`, `--password-stdin` (one line on stdin, as `docker login` does), or a 0600 file (`set-key --from-file`, and the key file itself). No env variables and no argv.
+- Every secret seen in a run is registered, and every printed or logged line goes through `scrub()`, which removes the registered values and anything shaped like `sk-or-v1-…` or a JWT. HTTP errors carry only a short, scrubbed message (`detail` or `error.message`) and the URL path, raised `from None` so no chained exception holds a body.
+- Redirects are never followed, so an `Authorization` header cannot be forwarded to another host. Loopback URLs bypass proxies. The Open WebUI URL must be loopback unless `--allow-remote` is given, and the OpenRouter URL must be https unless it is loopback (the fakes). `models` fetches the public list without the key.
+- The action log `~/.local/state/owh/owh.log` (0600) gets one line per run: timestamp, command, result, the key's first 9 characters and a short detail.
+**Consequences.** Scrubbing can over-redact. If the password is a common word, that word shows as `<redacted>` in messages. That is the safe direction. A test runs the whole lifecycle and checks that the key, password and token appear in no output or log line, that the key reaches Open WebUI only in `POST /openai/config/update` and OpenRouter only as the `Authorization` header of `GET /api/v1/key`, and that the password goes only to `POST /api/v1/auths/signin`.
+
+## ADR-0017: `apply` keeps hand-made settings
+**Recorded.** 2026-11-13 12:35 CST (Phase 04)
+**Context.** `apply` must be idempotent and must not fight Nick's own choices made in the admin UI.
+**Decision.**
+- The connection entry is merged: OWH sets `enable`, `prefix_id: "OR"`, `connection_type: "external"` and `model_ids`, and keeps any other field already on that entry (for example `tags` added in the UI).
+- The external task model is set to `qwen3:4b-instruct`, else `qwen3:8b` (ADR-0005), only if the current value is empty or not a local model. A local model that is already set is kept. `--task-model ID` chooses one explicitly. A model missing from Open WebUI's local list is never set, because Open WebUI would silently fall back to the chat model. Without a candidate, `apply` warns and leaves the value alone.
+- Placement follows R1: reuse the slot with the OpenRouter URL, else replace the first `https://api.openai.com/v1` entry with an empty key, else append.
+**Consequences.** A re-apply after a UI tweak is still a no-op. Changing the allowlist updates `model_ids` in place and writes a new snapshot (`mode: update`).

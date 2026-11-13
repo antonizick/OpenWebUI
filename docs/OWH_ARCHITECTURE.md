@@ -36,19 +36,30 @@ Testbed for rehearsals: `scripts/owh-testbed.sh` (container `owh-test-owu`, volu
 |---|---|---|
 | Dedicated key | `~/.config/owh/openrouter.key` (dir 0700, file 0600) | outside the repo |
 | Allowlist | `config/openrouter-models.txt` | in the repo, one model ID per line |
-| Pre-apply snapshots | `~/.local/state/owh/` (0600, contain the key) | used by `remove` |
+| Pre-apply snapshots | `~/.local/state/owh/snapshots/*.json` (0600 in 0700; contain prior keys) | one per writing `apply`, tagged with the Open WebUI URL; `remove` uses the earliest one for that URL (ADR-0015) |
+| Action log | `~/.local/state/owh/owh.log` (0600) | one line per run, no secrets (ADR-0016) |
 | Open WebUI config | `webui.db` config table, via the admin API only | never edited directly |
 | Launcher | `~/.local/bin/owh-openrouter` (`make install`) | an OS modification, in OSMods |
 
 Nothing in the container, its systemd unit, `Super+Alt+O`, OCC or `open-webui-upgrade` changes. The live Open WebUI is changed only in Phase 05; earlier phases use the throwaway testbed.
 
 ## Code map (`src/owh_openrouter/`)
-| Module | Status | Role |
-|---|---|---|
-| `cli.py` | stub (exit 2) | argparse: `set-key`, `models`, `apply [--dry-run]`, `status`, `remove`; global `--webui-url`, `--openrouter-url`, `--state-dir`, `--config-dir`, `--json` |
-| `paths.py` | done | XDG config/state dirs, 0700 directory creation, group/world access check |
-| `secrets.py` | done | `redact()` (first 9 chars + length), key file read (refuses non-private) and write (0600 in 0700) |
-| `allowlist.py` | done | parse `config/openrouter-models.txt` (comments, blanks, duplicates and bad IDs rejected) |
-| `webui.py`, `openrouter.py`, `snapshot.py` | interface only | HTTP clients and pre-apply snapshots, implemented in Phase 04 |
+| Module | Role |
+|---|---|
+| `cli.py` | argparse and the five commands; prompts (`getpass`, `--password-stdin`); prints and logs only through `scrub()`; maps errors to exit codes 0–5 |
+| `plan.py` | pure functions: R1 placement (`update`/`replace`/`append`), desired state for `apply` and `remove`, task-model choice, redacted `view()` and `diff()` |
+| `webui.py` | Open WebUI 0.13.3 client: sign-in, `/openai/config[/update]` (always all four fields), `/api/v1/tasks/config[/update]` (whole object), `/api/models`, `/api/version` |
+| `openrouter.py` | `GET /key` (401/402/429 mapped) and public `GET /models`; `per_million()` price formatting |
+| `net.py` | JSON over urllib: timeouts, no redirects, no proxy for loopback, scrubbed `HttpError`/`Unreachable`, URL checks (loopback Open WebUI, https OpenRouter) |
+| `snapshot.py` | 0600 snapshots in a 0700 dir, filtered by Open WebUI URL |
+| `secrets.py` | key format check and cleaning, `redact()`, `register()`/`scrub()`, atomic 0600 key file |
+| `paths.py`, `allowlist.py`, `errors.py` | XDG dirs and permission checks; allowlist parsing; exit-code exceptions |
 
-Tests live in `tests/`; `tests/fakes/server.py` holds the fake Open WebUI and fake OpenRouter (127.0.0.1, in-memory state, request log). Their endpoint shapes are the spec's expected list until Phase 04 aligns them with `docs/OWH_FINDINGS.md`.
+```
+apply:  allowlist + key file ──> OpenRouter /key, /models (validate)
+        ──> Open WebUI signin, GET config/tasks/models ──> plan_apply ──> diff
+        ──> (no change: stop) ──> snapshot ──> POST config, POST tasks ──> re-read and compare
+remove: earliest snapshot for this URL ──> signin, GET ──> plan_remove ──> POST ──> re-read
+```
+
+Tests live in `tests/` (`make check`, coverage gate 90 %). `tests/fakes/server.py` holds the fake Open WebUI and the fake OpenRouter (127.0.0.1, in-memory state, request log, failure injection), aligned with `docs/OWH_FINDINGS.md`. `tests/integration/test_testbed.py` (`make test-testbed`, `OWH_TESTBED=1`) runs apply → no-op apply → remove on the real v0.13.3 testbed with a fake OpenRouter on the host and compares the `config` table's `key, value` rows.
