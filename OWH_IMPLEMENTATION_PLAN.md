@@ -1,7 +1,7 @@
 # OWH: OpenWebUI Hybrid Implementation Plan
 
 **Spec:** [`docs/OWH_SPECIFICATION.md`](docs/OWH_SPECIFICATION.md). **Decisions:** [`docs/OWH_DECISIONS.md`](docs/OWH_DECISIONS.md). **Agent rules:** [`CLAUDE.md`](CLAUDE.md). **Shared phase instructions:** [`prompts/OWH_shared-instructions.md`](prompts/OWH_shared-instructions.md)
-**Last updated:** 2026-11-13 12:16 CST (owner question 1 answered)
+**Last updated:** 2026-11-13 12:37 CST (Phase 04 complete)
 
 > ⚠️ **Mandatory:** every agent that works on this project keeps this file accurate. **Before doing any other work, set your phase to `🔄 In progress` and commit that change to `main`** (claim protocol: `prompts/OWH_shared-instructions.md` §1a). Other agents read this table from `main`. At the end, set it to `✅ Complete` or `⛔ Blocked` and add a Phase Log entry. See `CLAUDE.md`.
 
@@ -32,7 +32,7 @@ Each phase is claimed by a `chore(plan): start phase NN` commit on `main` and ru
 | 01 | Repository foundation & governance | Governance files, secret-scan hook, private GitHub repo | Sonnet 5.5 (`/model sonnet`) | 00 | ✅ Complete | [`prompts/OWH_phase-01-repo-foundation.md`](prompts/OWH_phase-01-repo-foundation.md) | auto |
 | 02 | Tool scaffold & quality gates | uv project, CLI skeleton, fakes, pytest/ruff/shellcheck/gitleaks in CI | Sonnet 5.5 (`/model sonnet`) | 01 | ✅ Complete | [`prompts/OWH_phase-02-tool-scaffold.md`](prompts/OWH_phase-02-tool-scaffold.md) | auto |
 | 03 | Verification spike | Prove Open WebUI 0.13.3 and OpenRouter API facts on a throwaway container; propose the model shortlist | Opus 5.5 (`/model opus`) | 01 | ✅ Complete | [`prompts/OWH_phase-03-verification-spike.md`](prompts/OWH_phase-03-verification-spike.md) | auto |
-| 04 | `owh-openrouter` CLI | `set-key`, `models`, `apply`, `status`, `remove`; idempotent, snapshot/restore, tested against fakes and the testbed | Opus 5.5 (`/model opus`) | 02, 03 | 🔄 In progress | [`prompts/OWH_phase-04-owh-openrouter-cli.md`](prompts/OWH_phase-04-owh-openrouter-cli.md) | auto |
+| 04 | `owh-openrouter` CLI | `set-key`, `models`, `apply`, `status`, `remove`; idempotent, snapshot/restore, tested against fakes and the testbed | Opus 5.5 (`/model opus`) | 02, 03 | ✅ Complete | [`prompts/OWH_phase-04-owh-openrouter-cli.md`](prompts/OWH_phase-04-owh-openrouter-cli.md) | auto |
 | 05 | Rehearsal & live deploy | Real key, rehearsal on the testbed, backup, apply to the live instance, verify both backends in the UI, OSMods docs | Opus 5.5 (`/model opus`) | 04 | ⬜ Not started | [`prompts/OWH_phase-05-rehearsal-and-live-deploy.md`](prompts/OWH_phase-05-rehearsal-and-live-deploy.md) | owner |
 | 06 | Hardening, security & QA | Threat model, secret scans, upgrade survival, offline behaviour, spend guard, exposure review, follow-ups | Opus 5.5 (`/model opus`) | 05 | ⬜ Not started | [`prompts/OWH_phase-06-hardening-and-qa.md`](prompts/OWH_phase-06-hardening-and-qa.md) | review |
 | 07 | Release & handover | User guide, final report with timeline, CHANGELOG 1.0.0, vault and OSMods final, private repo pushed | Sonnet 5.5 (`/model sonnet`) | 06 | ⬜ Not started | [`prompts/OWH_phase-07-release-and-handover.md`](prompts/OWH_phase-07-release-and-handover.md) | review |
@@ -168,3 +168,36 @@ Newest entries at the bottom. Format: `### YYYY-MM-DD HH:MM TZ: Phase NN: <title
   - The picker shows raw IDs (`OR.anthropic/claude-sonnet-5.5`), not pretty names. Workspace Models could give friendly names later if Nick wants them (not in scope).
   - The mise `shellcheck` shim still needs `mise use -g shellcheck@0.11.0` (host config, not changed).
 - No host OS changes. The testbed state dir was created and removed, nothing persists, and the live instance is untouched.
+
+### 2026-11-13 12:37 CST: Phase 04: `owh-openrouter` CLI (✅ Complete)
+- **Timeline:** started 2026-11-13 12:18 CST (claim commit 2bf3c35) · finished 2026-11-13 12:37 CST · merged 2026-11-13 12:37 CST
+- **Model:** ran as Opus 5.5 (plan lists Opus 5.5)
+- Built: the five commands, as specified, with exit codes 0–5 and a 0600 action log `~/.local/state/owh/owh.log`.
+  - `set-key`: hidden prompt or `--from-file` (0600), whitespace trimmed, control characters rejected, format `^sk-or-v1-[0-9a-f]{64}$`, live `GET /api/v1/key` with 401/402/429 explained, atomic 0600 write, replace only on confirmation or `--force`.
+  - `models`: `--search`, `--json`, $/M from per-token strings, `free`/`variable`.
+  - `apply`: `--dry-run`, `--task-model`; R1 placement; snapshot before the first write; verify after.
+  - `status`: `--json`, `--no-login`.
+  - `remove`: `--snapshot`, `--delete-key`, `--yes`.
+  - New modules `net.py` (no redirects, timeouts, scrubbed errors, loopback/https URL rules), `plan.py` (pure desired-state logic and redacted diff) and `errors.py`. The fakes are aligned with the findings (19-field task config with 422, `null` enable, OpenRouter error shape, public `/models`, failure injection).
+  - ADR-0015 (surgical `remove`, snapshots tagged with the Open WebUI URL), ADR-0016 (secret handling), ADR-0017 (keep hand-made settings). First `docs/OWH_USER-GUIDE.md` draft.
+- Deviations:
+  - `remove` restores only what OWH changed (its slot, `ENABLE_OPENAI_API`, `TASK_MODEL_EXTERNAL`), not the whole snapshot, so connections added later survive (ADR-0015).
+  - Snapshots carry `webui_url`. This was found while checking the Phase 05 prompt: a testbed rehearsal shares `~/.local/state/owh/`, so its snapshot would otherwise have been the "earliest" one for the live `remove`.
+  - Added `--password-stdin` (admin password, one line on stdin) for the rehearsal and tests (ADR-0016).
+  - Dev dependency `pytest-cov` (MIT; `coverage` Apache-2.0).
+  - The Phase 05 prompt is corrected: global options go before the command, and the rehearsal uses `--password-stdin < admin-password`.
+- Tests:
+  - `make check` green: 147 passed, 1 skipped (the testbed test), coverage 96.8 % (gate 90 %), ruff, shellcheck 0.11.0, gitleaks no leaks.
+  - Error paths covered: bad key formats incl. `TESTKEY` and escape codes, 401/402/429, unreachable Open WebUI or OpenRouter, wrong password, non-admin, idempotence, snapshot before the first write (a failed first write gives exit 4 with the snapshot present), partial failure exit 5 then `remove` repairs it, verify mismatch exit 5, unknown allowlist ID, empty allowlist, remote URL refused, plain-http OpenRouter refused, foreign snapshot refused.
+  - A lifecycle secret audit checked every output line and the log. The key reaches Open WebUI only in `POST /openai/config/update` and OpenRouter only as the `Authorization` header of `GET /api/v1/key`. The password goes only to sign-in.
+  - **Testbed:** `OWH_TESTBED=1 uv run pytest -m testbed` passed three times: twice at 12:30 CST (the first run also showed a collection error from a helper named `testbed`, since renamed) and once at 12:34–12:35 CST after the snapshot change (1 passed, 40.7 s). Output: "403 config rows restored byte-for-byte (key, value); 5 local + 2 OR models listed; 1 chat reached the fake". The sequence was apply → `/api/models` shows `OR.vendor/model-a`, `OR.vendor/model-b:free` next to the Ollama models → a chat through `OR.vendor/model-a` reached the fake as `vendor/model-a` with the key → `status --json` → a no-op re-apply left the rows identical → `remove` restored all 403 `config` rows.
+  - A real OpenRouter public list (12:32 CST, $0) knows all eight ADR-0014 IDs. Prices match ADR-0014, and MiMo is $0.435/M in.
+- Cleanup: no `owh-test*` container or volume is left, `~/.local/state/owh/` was removed, and the live `open-webui` StartedAt is `2026-11-13T17:40:48.65503915Z` before and after; it was never contacted.
+- Spend: $0.00.
+- Follow-ups:
+  - The mise `shellcheck` shim still needs `mise use -g shellcheck@0.11.0` (host config, not changed; this run put the install dir on PATH).
+  - `owh-testbed.sh down` leaves an empty `~/.local/state/owh/` behind (it removes only `testbed/`). It is harmless, but Phase 06 could tidy it.
+  - Snapshots hold prior keys and are never pruned. Phase 06 should decide on retention.
+  - `status --no-login` can show only version, key file, key info and snapshots, because the task and model endpoints need a session.
+  - Phase 05 records the real `/api/v1/key` fields.
+- No host OS changes (`make install` is Phase 05).
