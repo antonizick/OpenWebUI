@@ -11,6 +11,7 @@ import getpass
 import json
 import os
 import sys
+import warnings
 from datetime import datetime
 from pathlib import Path
 
@@ -69,7 +70,16 @@ def confirm(question: str, args: argparse.Namespace) -> bool:
 def read_secret(prompt: str, from_stdin: bool) -> str:
     if from_stdin:
         return sys.stdin.readline().rstrip("\r\n")
-    return getpass.getpass(prompt)
+    # Without a terminal getpass would fall back to an echoing prompt; refuse instead.
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", getpass.GetPassWarning)
+            return getpass.getpass(prompt)
+    except (getpass.GetPassWarning, EOFError):
+        raise Refused(
+            "no terminal for the hidden prompt; run this in a terminal window "
+            "(not through Claude Code's '!'), or use --from-file / --password-stdin"
+        ) from None
 
 
 def log_action(ctx: Ctx, action: str, result: str) -> None:
@@ -208,7 +218,7 @@ def cmd_set_key(ctx: Ctx) -> int:
         except OSError as e:
             raise ValidationError(f"cannot read {src}: {e.strerror}") from None
     else:
-        raw = getpass.getpass("OpenRouter key for Open WebUI (hidden): ")
+        raw = read_secret("OpenRouter key for Open WebUI (hidden): ", False)
     secrets.register(raw.strip())
     try:
         key = secrets.clean_key(raw)

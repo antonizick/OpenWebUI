@@ -31,6 +31,26 @@ def test_set_key_from_prompt_stores_0600_and_prints_redacted(env):
     assert not list(env.config.glob(".openrouter.key.*"))  # temp file renamed away
 
 
+@pytest.mark.parametrize("command", ["set-key", "status"])
+@pytest.mark.parametrize("failure", ["no-echo-control", "eof"])
+def test_hidden_prompt_without_terminal_refuses_cleanly(env, monkeypatch, command, failure):
+    # What Claude Code's "!" does: getpass cannot hide input, or stdin is closed.
+    import getpass
+    import warnings
+
+    def no_tty(prompt=""):
+        if failure == "eof":
+            raise EOFError
+        warnings.warn("Can not control echo on the terminal.", getpass.GetPassWarning, stacklevel=2)
+        return FAKE_KEY  # the echoing fallback must never be reached
+
+    monkeypatch.setattr(getpass, "getpass", no_tty)
+    assert env.run(command) == 3
+    assert "no terminal for the hidden prompt" in env.err
+    assert "Traceback" not in env.err
+    assert not env.key_file.exists()
+
+
 def test_set_key_trims_whitespace(env):
     env.answers["OpenRouter key"] = f"  {FAKE_KEY}\n"
     assert env.run("set-key") == 0
