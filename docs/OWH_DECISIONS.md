@@ -13,6 +13,7 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 | ADR-0007 | 2026-11-13 11:20 CST | Rehearse on a throwaway container before touching the live instance | Accepted | 00 |
 | ADR-0008 | 2026-11-13 11:20 CST | Owner brainstorming recorded as a planning session in the timeline | Accepted | 00 |
 | ADR-0009 | 2026-11-13 11:42 CST | Secret-scan hook: plain `core.hooksPath` script using `gitleaks git --staged`, plus optional pre-commit config | Accepted | 01 |
+| ADR-0010 | 2026-11-13 11:48 CST | Install via a launcher script that runs the repo in place, not `uv tool install` | Accepted | 02 |
 ---
 
 ## ADR-0001: Project prefix `OWH`
@@ -82,3 +83,10 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 **Options considered.** Only the pre-commit framework; only a plain hook; both.
 **Decision.** A plain `scripts/git-hooks/pre-commit` (enabled with `git config core.hooksPath scripts/git-hooks`) running `gitleaks git --staged --redact --config .gitleaks.toml`, plus an optional `.pre-commit-config.yaml` for the pre-commit framework. The hook fails closed: it refuses to commit if gitleaks is missing. Rule: `sk-or-v1-[0-9a-f]{40,}` (the real key is `sk-or-v1-` + 64 hex characters, checked without printing it); allowlist only `sk-or-v1-TESTKEY...`.
 **Consequences.** Works with no extra tooling. `core.hooksPath` is per clone, so each fresh clone must run the one-line setup (documented in CONTRIBUTING); CI gitleaks is the backstop.
+
+## ADR-0010: Install as a launcher script
+**Recorded.** 2026-11-13 11:48 CST (Phase 02)
+**Context.** `make install` must put `owh-openrouter` on `PATH`. The prompt allowed a launcher or `uv tool install .`.
+**Options considered.** (a) `~/.local/bin/owh-openrouter` running `uv run --project <repo> owh-openrouter "$@"`; (b) `uv tool install .`.
+**Decision.** (a). Edits to the repo take effect at once with no reinstall, `uninstall` is deleting one file, and there is no second copy of the code in `~/.local/share/uv/tools` to drift. The cost is that the repo must stay at its path and `uv` must be on `PATH`, both true for this single-machine tool.
+**Consequences.** One file to document in OSMods in Phase 05; `make install` is not run before then.

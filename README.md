@@ -7,6 +7,14 @@ OWH adds Nick's OpenRouter account as a second backend to his local Open WebUI (
 ## Privacy
 Local (Ollama) models stay on the laptop. A chat with an OpenRouter model (shown with an `OR.` prefix) sends the conversation, attached files, RAG excerpts and web-search results to OpenRouter and the upstream model provider.
 
+## Development
+```
+uv sync        # create .venv from uv.lock (dev tools only; the tool has no runtime dependencies)
+make check     # pytest, ruff check, ruff format --check, shellcheck, gitleaks
+uv run owh-openrouter --help
+```
+`make check` needs `shellcheck` and `gitleaks` on `PATH`. Run `git config core.hooksPath scripts/git-hooks` once per clone. `make install` writes the launcher `~/.local/bin/owh-openrouter` (an OS modification; not used before Phase 05).
+
 ## Documents
 - [Implementation plan](OWH_IMPLEMENTATION_PLAN.md): phases, status, owner questions, phase log
 - [Specification](docs/OWH_SPECIFICATION.md): canonical spec (the Amendments override earlier sections)

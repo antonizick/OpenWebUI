@@ -19,4 +19,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Phase 02 adds: pytest, ruff check, ruff format --check, shellcheck.
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - run: uv sync --locked
+      - run: uv run pytest
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
+  shellcheck:
+    runs-on: ubuntu-latest # shellcheck is preinstalled on GitHub's Ubuntu runners
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: shellcheck scripts/*.sh scripts/git-hooks/*

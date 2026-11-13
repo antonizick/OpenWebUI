@@ -1,0 +1,32 @@
+[project]
+name = "owh-openrouter"
+version = "0.1.0"
+description = "Add an OpenRouter connection to a local Open WebUI (OWH)."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+owh-openrouter = "owh_openrouter.cli:main"
+
+[dependency-groups]
+dev = ["pytest", "ruff"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/owh_openrouter"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["scripts/phase_timeline.py"]  # vendored, identical in every repo
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

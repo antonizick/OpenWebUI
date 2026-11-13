@@ -1,0 +1,4 @@
+# OpenRouter model allowlist for owh-openrouter.
+# One OpenRouter model ID per line (for example "vendor/model-name").
+# Lines starting with "#" and blank lines are ignored; duplicates are an error.
+# Phase 03 proposes a shortlist; Nick confirms it in Phase 05.

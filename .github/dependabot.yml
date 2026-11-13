@@ -4,4 +4,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
-  # Phase 02 adds the pip/uv ecosystem.
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly

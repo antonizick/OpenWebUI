@@ -28,3 +28,14 @@ Background tasks (titles, tags, follow-ups, search queries) run on a local model
 | Launcher | `~/.local/bin/owh-openrouter` (`make install`) | an OS modification, in OSMods |
 
 Nothing in the container, its systemd unit, `Super+Alt+O`, OCC or `open-webui-upgrade` changes. The live Open WebUI is changed only in Phase 05; earlier phases use the throwaway testbed.
+
+## Code map (`src/owh_openrouter/`)
+| Module | Status | Role |
+|---|---|---|
+| `cli.py` | stub (exit 2) | argparse: `set-key`, `models`, `apply [--dry-run]`, `status`, `remove`; global `--webui-url`, `--openrouter-url`, `--state-dir`, `--config-dir`, `--json` |
+| `paths.py` | done | XDG config/state dirs, 0700 directory creation, group/world access check |
+| `secrets.py` | done | `redact()` (first 9 chars + length), key file read (refuses non-private) and write (0600 in 0700) |
+| `allowlist.py` | done | parse `config/openrouter-models.txt` (comments, blanks, duplicates and bad IDs rejected) |
+| `webui.py`, `openrouter.py`, `snapshot.py` | interface only | HTTP clients and pre-apply snapshots, implemented in Phase 04 |
+
+Tests live in `tests/`; `tests/fakes/server.py` holds the fake Open WebUI and fake OpenRouter (127.0.0.1, in-memory state, request log). Their endpoint shapes are the spec's expected list until Phase 04 aligns them with `docs/OWH_FINDINGS.md`.
