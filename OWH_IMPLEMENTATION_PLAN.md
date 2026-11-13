@@ -1,7 +1,7 @@
 # OWH: OpenWebUI Hybrid Implementation Plan
 
 **Spec:** [`docs/OWH_SPECIFICATION.md`](docs/OWH_SPECIFICATION.md). **Decisions:** [`docs/OWH_DECISIONS.md`](docs/OWH_DECISIONS.md). **Agent rules:** [`CLAUDE.md`](CLAUDE.md). **Shared phase instructions:** [`prompts/OWH_shared-instructions.md`](prompts/OWH_shared-instructions.md)
-**Last updated:** 2026-11-13 11:46 CST (Phase 02, tool scaffold)
+**Last updated:** 2026-11-13 12:10 CST (Phase 03, verification spike)
 
 > ⚠️ **Mandatory:** every agent that works on this project keeps this file accurate. **Before doing any other work, set your phase to `🔄 In progress` and commit that change to `main`** (claim protocol: `prompts/OWH_shared-instructions.md` §1a). Other agents read this table from `main`. At the end, set it to `✅ Complete` or `⛔ Blocked` and add a Phase Log entry. See `CLAUDE.md`.
 
@@ -31,7 +31,7 @@ Each phase is claimed by a `chore(plan): start phase NN` commit on `main` and ru
 | 00 | Planning & spec refinement | Review source docs, resolve decisions, write the spec, plan and prompts | Opus 5.5 (`/model opus`) | none | ✅ Complete | n/a (planning session) | owner |
 | 01 | Repository foundation & governance | Governance files, secret-scan hook, private GitHub repo | Sonnet 5.5 (`/model sonnet`) | 00 | ✅ Complete | [`prompts/OWH_phase-01-repo-foundation.md`](prompts/OWH_phase-01-repo-foundation.md) | auto |
 | 02 | Tool scaffold & quality gates | uv project, CLI skeleton, fakes, pytest/ruff/shellcheck/gitleaks in CI | Sonnet 5.5 (`/model sonnet`) | 01 | ✅ Complete | [`prompts/OWH_phase-02-tool-scaffold.md`](prompts/OWH_phase-02-tool-scaffold.md) | auto |
-| 03 | Verification spike | Prove Open WebUI 0.13.3 and OpenRouter API facts on a throwaway container; propose the model shortlist | Opus 5.5 (`/model opus`) | 01 | 🔄 In progress | [`prompts/OWH_phase-03-verification-spike.md`](prompts/OWH_phase-03-verification-spike.md) | auto |
+| 03 | Verification spike | Prove Open WebUI 0.13.3 and OpenRouter API facts on a throwaway container; propose the model shortlist | Opus 5.5 (`/model opus`) | 01 | ✅ Complete | [`prompts/OWH_phase-03-verification-spike.md`](prompts/OWH_phase-03-verification-spike.md) | auto |
 | 04 | `owh-openrouter` CLI | `set-key`, `models`, `apply`, `status`, `remove`; idempotent, snapshot/restore, tested against fakes and the testbed | Opus 5.5 (`/model opus`) | 02, 03 | ⬜ Not started | [`prompts/OWH_phase-04-owh-openrouter-cli.md`](prompts/OWH_phase-04-owh-openrouter-cli.md) | auto |
 | 05 | Rehearsal & live deploy | Real key, rehearsal on the testbed, backup, apply to the live instance, verify both backends in the UI, OSMods docs | Opus 5.5 (`/model opus`) | 04 | ⬜ Not started | [`prompts/OWH_phase-05-rehearsal-and-live-deploy.md`](prompts/OWH_phase-05-rehearsal-and-live-deploy.md) | owner |
 | 06 | Hardening, security & QA | Threat model, secret scans, upgrade survival, offline behaviour, spend guard, exposure review, follow-ups | Opus 5.5 (`/model opus`) | 05 | ⬜ Not started | [`prompts/OWH_phase-06-hardening-and-qa.md`](prompts/OWH_phase-06-hardening-and-qa.md) | review |
@@ -97,7 +97,7 @@ gantt
 ## Owner questions
 | # | Question | Status / proposed default | Needed by |
 |---|---|---|---|
-| 1 | Which OpenRouter models go on the allowlist? | Open (asked 2026-11-13 11:20 CST). Phase 03 proposes a shortlist with live prices; Nick confirms | Phase 05 |
+| 1 | Which OpenRouter models go on the allowlist? | Open (asked 2026-11-13 11:20 CST). **Proposed (Phase 03, prices fetched 2026-11-13 12:03 CST, $/M in/out):** `anthropic/claude-sonnet-5.5` (general, 1M ctx, 2.00/10.00), `anthropic/claude-haiku-5.5` (cheap/fast, 1M, 0.10/0.50), `google/gemini-4-hydrogen` (long-context multimodal, 1,048,576, 1.50/7.50), `openai/gpt-6.1-terra` (coding, 1,050,000, 1.00/5.00), optional free `google/gemma-4-31b-it:free` (262,144, 0/0). Details in `docs/OWH_FINDINGS.md` §7; Nick confirms or edits | Phase 05 |
 | 2 | Spending limit for the new dedicated key | Open (asked 2026-11-13 11:20 CST). Proposed default: $20/month, set on openrouter.ai at key creation | Phase 05 |
 | 3 | OpenRouter account privacy: allow providers that log or train on prompts? | Open (asked 2026-11-13 11:20 CST). Proposed default: disallow training/logging providers; ZDR-only off | Phase 05 |
 | 4 | Licence, if the repo is ever made public | Deferred (2026-11-13 11:20 CST). Default: private, "All rights reserved" | Phase 07 |
@@ -137,3 +137,32 @@ Newest entries at the bottom. Format: `### YYYY-MM-DD HH:MM TZ: Phase NN: <title
 - Tests: 31 passed (paths, redact, key-file permissions 0644/0640/0604/0666 refused and 0600 accepted, allowlist, CLI stubs, fakes smoke). `make check` green with shellcheck 0.11.0 and gitleaks (no leaks) on PATH.
 - Follow-ups: the mise `shellcheck` shim still has no global version, so `make lint` fails in a plain shell until Nick runs `mise use -g shellcheck@0.11.0` (a host config change I did not make; I put the mise install dir on PATH for the check). CI result on GitHub is checked after the push. `make install` was not run; the launcher is an OSMods item for Phase 05.
 - No host OS changes.
+
+### 2026-11-13 12:10 CST: Phase 03: Verification spike (✅ Complete)
+- **Timeline:** started 2026-11-13 11:51 CST (claim commit 879a1f8) · finished 2026-11-13 12:10 CST · merged 2026-11-13 12:10 CST
+- **Model:** ran as Opus 5.5 (plan lists Opus 5.5)
+- Built: `scripts/owh-testbed.sh` (`up|down|status|reset|token`), `docs/OWH_FINDINGS.md` (one section per task, with evidence and the Phase 04 consequence), ADR-0005 → Accepted, ADR-0011 (testbed on host network bound to 127.0.0.1), ADR-0012 (attribution headers, R9 corrected), ADR-0013 (key validation via `/api/v1/key`), spec Amendments v2 (§3.6), real-endpoint table in `docs/OWH_ARCHITECTURE.md`, owner question 1 proposal.
+- Key findings:
+  - `prefix_id` is stored as `"OR"` (Open WebUI adds the dot).
+  - With `model_ids` set, Open WebUI never fetches OpenRouter's model list: about 0.1 s with the upstream closed, unroutable or slow, against 10.8–11.0 s without (`AIOHTTP_CLIENT_TIMEOUT_MODEL_LIST`, default 10 s). No timeout tuning is needed.
+  - `TASK_MODEL_EXTERNAL=qwen3:4b-instruct` keeps title, tags and follow-ups local. End-to-end, there was exactly 1 upstream request per chat.
+  - The stored config beats env vars across a container recreate (except with `ENABLE_PERSISTENT_CONFIG=false`).
+  - Omitting `ENABLE_OPENAI_API` in `config/update` silently disables all OpenAI connections. The tasks update needs the full object (a partial body is a 422).
+  - OpenRouter `/models` returns 200 for invalid keys, so validation must use `/api/v1/key`.
+  - Open WebUI always sends `HTTP-Referer`/`X-Title` to openrouter.ai.
+- Deviations:
+  - The testbed uses `--network host` with `HOST=127.0.0.1 PORT=18080`, because the bridge network could not reach Ollama on 127.0.0.1 (curl exit 28). This is the prompt's fallback plus a loopback bind (ADR-0011).
+  - Spec R9 was wrong and is amended.
+- Spend: $0.00 (public `/models` only, plus 401 probes with an all-zero fake key).
+- Tests:
+  - `shellcheck scripts/owh-testbed.sh` clean.
+  - `down, down, up, up (no-op), status` ran twice in a row, then a final `down`; all idempotent.
+  - `make check` green (31 passed, ruff, shellcheck, gitleaks no leaks).
+  - Cleanup: no `owh-test*` container or volume, the fake servers are stopped, and `~/.local/state/owh/` is removed.
+  - The live `open-webui` StartedAt was `2026-11-13T17:40:48.65503915Z` before and after, and its config was only read.
+- Follow-ups:
+  - Phase 04 aligns the fakes with the findings (listed in its prompt).
+  - Phase 05 confirms the real `/api/v1/key` body (label, limit, `limit_reset`).
+  - The picker shows raw IDs (`OR.anthropic/claude-sonnet-5.5`), not pretty names. Workspace Models could give friendly names later if Nick wants them (not in scope).
+  - The mise `shellcheck` shim still needs `mise use -g shellcheck@0.11.0` (host config, not changed).
+- No host OS changes. The testbed state dir was created and removed, nothing persists, and the live instance is untouched.
