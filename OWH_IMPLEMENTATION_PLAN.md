@@ -205,7 +205,7 @@ Newest entries at the bottom. Format: `### YYYY-MM-DD HH:MM TZ: Phase NN: <title
 - No host OS changes (`make install` is Phase 05).
 
 ### 2026-11-13 13:25 CST: Phase 05: Rehearsal & live deploy (✅ Complete)
-- **Timeline:** started 2026-11-13 12:43 CST (claim commit 0efb977) · finished 2026-11-13 13:25 CST · merged MERGED_TS
+- **Timeline:** started 2026-11-13 12:43 CST (claim commit 0efb977) · finished 2026-11-13 13:25 CST · merged 2026-11-13 13:25 CST
 - **Model:** ran as Opus 5.5 (plan lists Opus 5.5)
 - **Nick's acceptance (in session):** "both backends work, local and OpenRouter chats answered".
 - Owner questions answered 2026-11-13 12:45 CST: Q2 no spend management in OWH; any limit is Nick's on openrouter.ai (ADR-0018). Q3 allow logging/training providers (ADR-0019). Spec Amendments v3. Phase 06 prompt (spend guard) adjusted.
