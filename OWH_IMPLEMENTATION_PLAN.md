@@ -125,7 +125,7 @@ Newest entries at the bottom. Format: `### YYYY-MM-DD HH:MM TZ: Phase NN: <title
 - No host OS changes (nothing outside the repo and the vault note, `git config core.hooksPath` is repo-local).
 
 ### 2026-11-13 11:46 CST: Phase 02: Tool scaffold & quality gates (✅ Complete)
-- **Timeline:** started 2026-11-13 11:44 CST (claim commit 9eb5dff) · finished 2026-11-13 11:46 CST · merged not merged yet
+- **Timeline:** started 2026-11-13 11:44 CST (claim commit 9eb5dff) · finished 2026-11-13 11:46 CST · merged 2026-11-13 11:46 CST
 - **Model:** ran as Sonnet 5.5 (plan lists Sonnet 5.5)
 - Built: `pyproject.toml` (hatchling, no runtime deps, dev group pytest + ruff, `uv.lock`), `src/owh_openrouter/` (`cli.py` with five stub subcommands exiting 2, `paths.py`, `secrets.py`, `allowlist.py` implemented; `webui.py`, `openrouter.py`, `snapshot.py` interface only), `tests/fakes/server.py` (fake Open WebUI and OpenRouter with request log, marked TODO(phase-04)), `Makefile` (`check`, `test`, `lint`, `install`, `uninstall`), CI jobs `python` and `shellcheck` (actions pinned by SHA; `astral-sh/setup-uv` v10.3.3 = `68559e9`), Dependabot `uv` ecosystem, empty `config/openrouter-models.txt`, ADR-0010 (launcher script install), dev licences in THIRD_PARTY_NOTICES.
 - Deviation: ruff excludes the vendored `scripts/phase_timeline.py` (identical in every repo, must not be edited).
