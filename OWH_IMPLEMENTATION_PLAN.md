@@ -232,7 +232,7 @@ Newest entries at the bottom. Format: `### YYYY-MM-DD HH:MM TZ: Phase NN: <title
 - Host OS changes: `~/.local/bin/owh-openrouter`, `~/.config/owh/`, `~/.local/state/owh/`, the pre-OWH backup, and Open WebUI's stored config (connection 0, `TASK_MODEL_EXTERNAL`). All documented in OSMods. **Undo:** `owh-openrouter remove [--delete-key]`, `make uninstall`, revoke the key; or restore the backup.
 
 ### 2026-11-13 13:51 CST: Phase 06: Hardening, security & QA (✅ Complete)
-- **Timeline:** started 2026-11-13 13:38 CST (claim commit 2a6aef1) · finished 2026-11-13 13:51 CST · merged MERGED_TS
+- **Timeline:** started 2026-11-13 13:38 CST (claim commit 2a6aef1) · finished 2026-11-13 13:51 CST · merged 2026-11-13 13:51 CST
 - **Model:** ran as Opus 5.5 (plan lists Opus 5.5)
 - **Nick's decision (in session):** S6 port 8080: "Keep as is, documented" (ADR-0021). He was offered B (bind to `127.0.0.1`) and C (`ufw deny 8080`).
 - Built:
