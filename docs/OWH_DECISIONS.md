@@ -8,12 +8,15 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 | ADR-0002 | 2026-11-13 11:20 CST | Dedicated OpenRouter key for Open WebUI | Accepted | 00 |
 | ADR-0003 | 2026-11-13 11:20 CST | Curated, prefixed model allowlist | Accepted | 00 |
 | ADR-0004 | 2026-11-13 11:20 CST | Configure via Open WebUI admin API (stored config), not env vars | Accepted | 00 |
-| ADR-0005 | 2026-11-13 11:20 CST | Background tasks (titles, tags, follow-ups, queries) on a local model | Proposed | 00 (verify 03) |
+| ADR-0005 | 2026-11-13 11:20 CST | Background tasks (titles, tags, follow-ups, queries) on a local model | Accepted (2026-11-13 12:06 CST) | 00 (verified 03) |
 | ADR-0006 | 2026-11-13 11:20 CST | Python stdlib-only CLI `owh-openrouter`, uv/pytest/ruff for dev | Accepted | 00 |
 | ADR-0007 | 2026-11-13 11:20 CST | Rehearse on a throwaway container before touching the live instance | Accepted | 00 |
 | ADR-0008 | 2026-11-13 11:20 CST | Owner brainstorming recorded as a planning session in the timeline | Accepted | 00 |
 | ADR-0009 | 2026-11-13 11:42 CST | Secret-scan hook: plain `core.hooksPath` script using `gitleaks git --staged`, plus optional pre-commit config | Accepted | 01 |
 | ADR-0010 | 2026-11-13 11:48 CST | Install via a launcher script that runs the repo in place, not `uv tool install` | Accepted | 02 |
+| ADR-0011 | 2026-11-13 12:06 CST | Testbed on host networking bound to `127.0.0.1:18080` | Accepted | 03 |
+| ADR-0012 | 2026-11-13 12:06 CST | Keep Open WebUI's built-in OpenRouter attribution headers; no custom `headers` by default (R9 corrected) | Accepted | 03 |
+| ADR-0013 | 2026-11-13 12:06 CST | Validate the key with OpenRouter `GET /api/v1/key`, never via `/models` or Open WebUI `/openai/verify` | Accepted | 03 |
 ---
 
 ## ADR-0001: Project prefix `OWH`
@@ -57,6 +60,7 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 **Options considered.** Local task model; leave as is (chat model); a cheap OpenRouter model.
 **Decision (Proposed).** Set the external task model to a local Ollama model (`qwen3:4b-instruct`, else `qwen3:8b`). Phase 03 verifies Open WebUI 0.13.3 accepts this and measures the effect; it then marks this ADR Accepted or supersedes it.
 **Consequences.** Only the chat completion goes to OpenRouter; titles use the GPU briefly (Ollama may load a second model; VRAM 8 GB).
+**Status change, 2026-11-13 12:06 CST (Phase 03): Accepted.** Verified on the v0.13.3 testbed (`docs/OWH_FINDINGS.md` §4). With `TASK_MODEL_EXTERNAL=""`, a chat on `OR.fake/alpha` sent title, tags and follow-up requests to the upstream (1 chat + 3 task calls). With `TASK_MODEL_EXTERNAL="qwen3:4b-instruct"`, a UI-style chat with background tasks made exactly one upstream request, and the title, tags and follow-ups came from the local model. The rule applies because the OpenRouter connection keeps `connection_type: "external"`. `POST /api/v1/tasks/config/update` needs the full config object, so `apply` changes only this one field of the GET result.
 
 ## ADR-0006: Python stdlib-only CLI
 **Recorded.** 2026-11-13 11:20 CST (Phase 00)
@@ -90,3 +94,23 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 **Options considered.** (a) `~/.local/bin/owh-openrouter` running `uv run --project <repo> owh-openrouter "$@"`; (b) `uv tool install .`.
 **Decision.** (a). Edits to the repo take effect at once with no reinstall, `uninstall` is deleting one file, and there is no second copy of the code in `~/.local/share/uv/tools` to drift. The cost is that the repo must stay at its path and `uv` must be on `PATH`, both true for this single-machine tool.
 **Consequences.** One file to document in OSMods in Phase 05; `make install` is not run before then.
+
+## ADR-0011: Testbed on host networking bound to 127.0.0.1
+**Recorded.** 2026-11-13 12:06 CST (Phase 03)
+**Context.** The Phase 03 prompt asked for a bridge-network testbed with `host.docker.internal`, falling back to `--network host` with `PORT=18080`. Ollama listens on `127.0.0.1:11434` only. From a bridge container, `curl http://host.docker.internal:11434` timed out (exit 28).
+**Options considered.** (a) Bridge, and make Ollama listen on the Docker bridge address (a host OS change to `prometheus-ollama.service`); (b) host network with `PORT=18080`, as the prompt's fallback; (c) as (b), plus `HOST=127.0.0.1`.
+**Decision.** (c). `start.sh` honours `HOST`, so uvicorn binds `127.0.0.1:18080` only (checked with `ss -ltn`), the same exposure as the prompt's `-p 127.0.0.1:18080:8080`. No host change is needed, and the testbed reaches Ollama and any fake upstream on `127.0.0.1` the same way the live container does.
+**Consequences.** The testbed shares the host network namespace, but its name, volume, port and state dir are distinct, and the script refuses the live names. A fake OpenRouter for integration tests listens on `127.0.0.1:<port>` and is reachable by the testbed unchanged.
+
+## ADR-0012: Attribution headers (spec R9 corrected)
+**Recorded.** 2026-11-13 12:06 CST (Phase 03)
+**Context.** Spec R9 assumed attribution headers are not sent unless configured. Open WebUI 0.13.3 hard-codes `HTTP-Referer: https://openwebui.com/` and `X-Title: Open WebUI` for every request to a URL containing `openrouter.ai` (`utils/headers.py:36-49`; seen on the testbed). Per-connection `headers` are merged last and can override them.
+**Options considered.** (a) Leave Open WebUI's defaults; (b) override them with blanks; (c) set OWH's own values.
+**Decision.** (a). The headers name the app, not Nick, and the dedicated key already separates usage. Overriding an upstream identifier that Open WebUI's licence asks to keep gains nothing. `apply` sets no `headers` field. Nick can add one later through the connection's `headers` if he wants.
+**Consequences.** Requests appear in OpenRouter's app rankings as "Open WebUI". The user guide says so.
+
+## ADR-0013: Key validation via `GET /api/v1/key`
+**Recorded.** 2026-11-13 12:06 CST (Phase 03)
+**Context.** OpenRouter's `GET /api/v1/models` returned 200 for an invalid key. Open WebUI's `POST /openai/verify` only proxies `{url}/models`, so it would report any key as valid.
+**Decision.** `set-key` (and `status`) validate the key with OpenRouter `GET https://openrouter.ai/api/v1/key` and `Authorization: Bearer <key>`. A 200 with a `data` object means valid, and 401 means rejected (`{"error":{"code":401,"message":"User not found."}}`). The format check `^sk-or-v1-[0-9a-f]{64}$` (73 characters) runs first.
+**Consequences.** Validation costs nothing (no completion). The label, limit and usage come from the same response, so `status` can show them.

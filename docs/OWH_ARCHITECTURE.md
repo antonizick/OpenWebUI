@@ -13,10 +13,23 @@ Browser ──> Open WebUI (container `open-webui`, host net, :8080)
 ```
 Browser ──> Open WebUI (unchanged container, unit, toggle, OCC)
               ├──> Ollama 127.0.0.1:11434          local models, data stays on the laptop
-              └──> OpenRouter https://openrouter.ai/api/v1   allowlisted models, prefix "OR."
+              └──> OpenRouter https://openrouter.ai/api/v1   allowlisted models (`model_ids`), shown as "OR.<id>" (`prefix_id: "OR"`)
                      (connection stored in webui.db; replaces the dead OpenAI entry)
 ```
-Background tasks (titles, tags, follow-ups, search queries) run on a local model so only the chat completion goes to OpenRouter (ADR-0005, verified in Phase 03).
+Background tasks (titles, tags, follow-ups, search queries) run on a local model (`TASK_MODEL_EXTERNAL`), so only the chat completion goes to OpenRouter (ADR-0005, Accepted in Phase 03). Because the allowlist is applied as `model_ids`, Open WebUI never fetches OpenRouter's model list, so the picker does not wait on OpenRouter when it is offline.
+
+## Real endpoints (Open WebUI 0.13.3, OpenRouter; see `docs/OWH_FINDINGS.md`)
+| Purpose | Endpoint |
+|---|---|
+| Admin sign-in | `POST /api/v1/auths/signin` → Bearer token |
+| Read / write connections | `GET /openai/config`, `POST /openai/config/update` (all four fields, `ENABLE_OPENAI_API` always sent) |
+| Read / write task model | `GET /api/v1/tasks/config`, `POST /api/v1/tasks/config/update` (full object) |
+| Merged model list | `GET /api/models` |
+| Local models installed | Ollama `GET http://127.0.0.1:11434/api/tags` |
+| Key check | OpenRouter `GET https://openrouter.ai/api/v1/key` (ADR-0013) |
+| Price list | OpenRouter `GET https://openrouter.ai/api/v1/models` (public; USD per token as strings) |
+
+Testbed for rehearsals: `scripts/owh-testbed.sh` (container `owh-test-owu`, volume `owh-test-owu-data`, host network, `127.0.0.1:18080`; ADR-0007, ADR-0011).
 
 ## What `owh-openrouter` touches
 | Thing | Where | Notes |

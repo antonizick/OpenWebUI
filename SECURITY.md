@@ -9,6 +9,10 @@
 ## Where the key ends up
 After `apply`, the key also lives in Open WebUI's `webui.db` (config table), and so in every later backup of the `open-webui` volume (`~/.local/share/open-webui-upgrade/backups/` and any manual backup copy). Never copy those into `~/Documents` (it syncs to Drive). Pre-apply snapshots in `~/.local/state/owh/` are 0600.
 
+`GET /openai/config` returns connection keys in clear text to any Open WebUI admin session, so the tool never prints or logs that response unredacted.
+
+The rehearsal testbed (`scripts/owh-testbed.sh`) keeps its random admin password in `~/.local/state/owh/testbed/admin-password` (dir 0700, file 0600), passes its `WEBUI_SECRET_KEY` through a temporary 0600 env file rather than argv, and deletes both on `down`. Testbed runs use only fake keys.
+
 ## Rotating the key
 1. Create a new dedicated key on openrouter.ai (with a spending limit).
 2. `owh-openrouter set-key`, then `owh-openrouter apply`.
