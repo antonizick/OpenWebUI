@@ -57,7 +57,7 @@
 | T13 | A bad `apply` breaks the live config | dry run, snapshot before the first write, verify after, `remove` restores only OWH's slot (ADR-0015); a full pre-OWH DB backup | Low. |
 
 ## 5. S6: port 8080 under host networking
-**Facts (2026-11-13 13:45 CST, read-only):** the container sets no `HOST`, so uvicorn binds `0.0.0.0:8080` while it runs. Interfaces: `wlo1` 192.168.40.31/24, `tailscale0` 100.103.35.26, Docker bridges. `ufw` is active with `DEFAULT_INPUT_POLICY="DROP"` and no allow rule for 8080 (allow rules exist only for 53317 and Docker DNS, plus `clbr0` for another project). Open WebUI: one user (admin), `ui.enable_signup=false`, default role `pending`, `auth.enable_api_keys=false`. Whether `tailscaled`'s own `ts-input` rules accept tailnet traffic before ufw sees it could not be checked without root.
+**Facts (2026-11-13 13:45 CST, read-only):** the container sets no `HOST`, so uvicorn binds `0.0.0.0:8080` while it runs. Interfaces: a Wi-Fi LAN interface, `tailscale0`, Docker bridges. `ufw` is active with `DEFAULT_INPUT_POLICY="DROP"` and no allow rule for 8080 (allow rules exist only for 53317 and Docker DNS, plus `clbr0` for another project). Open WebUI: one user (admin), `ui.enable_signup=false`, default role `pending`, `auth.enable_api_keys=false`. Whether `tailscaled`'s own `ts-input` rules accept tailnet traffic before ufw sees it could not be checked without root.
 
 | Option | Pros | Cons |
 |---|---|---|

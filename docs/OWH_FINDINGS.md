@@ -230,7 +230,7 @@ OWH manages no spend (ADR-0018). The live key's `/api/v1/key` reports `limit` 50
 - Local models are unaffected. `owh-openrouter set-key` and `status` map a 402 on the key check to "out of credit or the key's spending limit is reached".
 
 ### 8.5 Exposure (S6), read-only, 13:45 CST
-Host networking, with no `HOST` in the container env, so uvicorn binds `0.0.0.0:8080` while it runs. Interfaces: `wlo1` 192.168.40.31/24, `tailscale0` 100.103.35.26, Docker bridges. `ufw`: active, `DEFAULT_INPUT_POLICY="DROP"`, no rule for 8080. Open WebUI: 1 user (admin), `ui.enable_signup=false`, `ui.default_user_role="pending"`, `auth.enable_api_keys=false`. Decision: keep as is (ADR-0021, threat model §5).
+Host networking, with no `HOST` in the container env, so uvicorn binds `0.0.0.0:8080` while it runs. Interfaces: a Wi-Fi LAN interface, `tailscale0`, Docker bridges. `ufw`: active, `DEFAULT_INPUT_POLICY="DROP"`, no rule for 8080. Open WebUI: 1 user (admin), `ui.enable_signup=false`, `ui.default_user_role="pending"`, `auth.enable_api_keys=false`. Decision: keep as is (ADR-0021, threat model §5).
 
 ## Summary of spec impact
 | Spec item | Finding | Action |

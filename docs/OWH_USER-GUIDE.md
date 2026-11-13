@@ -1,8 +1,19 @@
-# OWH: User Guide (draft)
+# OWH: User Guide
 
-**Status:** steps as run on the live instance, 2026-11-13 13:05 CST (Phase 05). Phase 07 finalises the guide.
+**Version 1.0.0**, 2026-11-13 (Phase 07). Steps were run on the live instance on 2026-11-13 13:05 CST (Phase 05). See also `docs/OWH_FINAL-REPORT.md` and `docs/OWH_THREAT-MODEL.md`.
 
 `owh-openrouter` adds your OpenRouter account to the local Open WebUI as a second backend next to Ollama. You then pick either a local model or an `OR.`-prefixed OpenRouter model in the model picker. It changes only Open WebUI's stored settings, through its admin API. The container, its unit, `Super+Alt+O`, OCC and `open-webui-upgrade` stay as they are.
+
+## Daily use
+- Open Open WebUI as usual (`Super+Alt+O`, or `http://127.0.0.1:8080`). The model picker lists the local Ollama models and, next to them, the eight allowlisted OpenRouter models with an `OR.` prefix (for example `OR.anthropic/claude-sonnet-5.5`). The picker shows raw IDs, not friendly names.
+- Pick either kind per chat. Each chat goes to the backend of the model chosen; new chats still default to your local model.
+- **Privacy:** an `OR.` chat sends the conversation, attached files, RAG excerpts and web-search results to OpenRouter and the upstream provider, which may log or train (ADR-0019). Use a local model for anything private. Titles, tags and follow-up suggestions are always made by the local task model, so they never go to OpenRouter.
+- **Check spend:** `owh-openrouter status` shows the key's limit, usage and remaining credit, and openrouter.ai Activity shows each call. OWH sets no limit itself (ADR-0018); the key's $50/month limit is yours on openrouter.ai.
+
+## Add or remove a model
+1. Edit `config/openrouter-models.txt` in the main checkout (one OpenRouter ID per line, `#` comments allowed). Find IDs and prices with `owh-openrouter models --search TEXT`.
+2. `owh-openrouter models` (unknown IDs are flagged, exit 1), then `owh-openrouter apply --dry-run`, then `owh-openrouter apply`, all in a terminal window. Refresh the browser tab; no restart is needed.
+3. Never empty the allowlist: `apply` refuses, because Open WebUI would then list every OpenRouter model and wait up to 10 s on OpenRouter whenever it is offline.
 
 ## 1. Install
 ```
@@ -96,6 +107,26 @@ Do this before `expires_at` (the live key expires 2027-11-13; `status` warns fro
 6. Checked in the browser: both backends answer from the picker.
 
 **Full restore from that backup** (also discards chats made since): `open-webui-stop`, then `docker run --rm -v open-webui:/data -v ~/.local/share/open-webui-backups:/b alpine sh -c 'cp /b/webui.db.<stamp>.pre-owh.bak /data/webui.db && rm -f /data/webui.db-wal /data/webui.db-shm'`, then `open-webui-start`.
+
+## Troubleshooting
+| Symptom | Cause and fix |
+|---|---|
+| A command exits 3 with "no terminal" | `set-key`, `apply`, `status` and `remove` need a hidden prompt. Run them in a real terminal window, not through the Claude Code `!` prefix (ADR-0020). |
+| No `OR.` models in the picker | Run `owh-openrouter status`. If connection 0 is missing or off, run `apply`. Refresh the tab. If you restored the pre-OWH backup, the connection is gone by design. |
+| An `OR.` chat fails at once with "Server Connection Error" | OpenRouter is unreachable or the connection is refused. Local models are unaffected (findings §8.3). |
+| An `OR.` chat shows HTTP 402 | The key's limit or the account credit is used up. Raise the limit or add credit on openrouter.ai (findings §8.4). |
+| `set-key` says "key rejected" (401) | The key is wrong, revoked or expired. Create a new one (§7). |
+| `status` warns about expiry | Rotate the key (§7); the live one expires 2027-11-13. |
+| `apply` exits 5 | A partial change. Run `owh-openrouter remove`, then `apply` again. |
+| The launcher fails after the repo moved | `make install` hard-codes the directory it ran from. Run it again from the main checkout. |
+| The setup vanished after an Open WebUI upgrade | It should not: it is stored in the volume and survives `open-webui-upgrade` (findings §8.2). Run `status`, then `apply`. |
+
+## Full undo
+Do as much as you want, in this order:
+1. `owh-openrouter remove`: restores the connection slot, the OpenAI on/off switch and the cloud task model (surgical, ADR-0015).
+2. `owh-openrouter remove --delete-key`: also deletes `~/.config/owh/openrouter.key`. Then revoke the key on openrouter.ai.
+3. `make uninstall` (from the main checkout): removes `~/.local/bin/owh-openrouter`.
+4. Last resort: restore the pre-OWH database backup (see "Full restore" below). This discards chats made since 2026-11-13 12:58 CST.
 
 ## Options for every command
 | Option | Meaning |
