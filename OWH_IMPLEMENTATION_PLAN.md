@@ -269,7 +269,7 @@ Newest entries at the bottom. Format: `### YYYY-MM-DD HH:MM TZ: Phase NN: <title
   - Closed: `status --no-login` cannot show connections (Open WebUI needs a session), by design. Friendly picker names are a new feature, not in scope (use `/phase-add` if wanted). An `ENABLE_PERSISTENT_CONFIG` warning is not detectable through the API; T11 documents it, nothing sets it, and the R2 test would catch it. The Phase 05 Ollama 500 was benign.
 
 ### 2026-11-13 17:32 CST: Phase 07: Release & handover (✅ Complete)
-- **Timeline:** started 2026-11-13 17:27 CST (claim commit 01eb9f7) · finished 2026-11-13 17:32 CST · merged not merged yet
+- **Timeline:** started 2026-11-13 17:27 CST (claim commit 01eb9f7) · finished 2026-11-13 17:32 CST · merged 2026-11-13 17:32 CST
 - **Model:** ran as Sonnet 5.5 (plan lists Sonnet 5.5)
 - **Nick's decisions (in session):** release option "Make public"; licence MIT (owner question 4 answered, ADR-0024).
 - Built: final `docs/OWH_USER-GUIDE.md` (daily use, add or remove a model, spend, troubleshooting table, full undo); `docs/OWH_FINAL-REPORT.md` (what was built, ADRs, Definition-of-done evidence, spend, residual risks, open items, generated timeline block); Definition of done ticked with evidence (all nine items met, none became a follow-up); README (status, licence), CHANGELOG `[1.0.0]`, OSMods `Open WebUI.md` and README, vault note.
