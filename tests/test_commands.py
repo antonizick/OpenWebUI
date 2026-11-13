@@ -6,7 +6,7 @@ import stat
 
 import pytest
 
-from tests.fakes.server import ADMIN_PASSWORD, FAKE_KEY, TASK_CONFIG, TOKEN
+from tests.fakes.server import ADMIN_PASSWORD, FAKE_KEY, TASK_CONFIG, TOKEN, FakeOpenWebUI
 
 OTHER_KEY = "sk-or-v1-" + "a" * 64
 PRISTINE = {
@@ -171,6 +171,7 @@ def test_apply_writes_connection_task_model_and_snapshot(env):
     s = env.snapshot()
     assert s["before"]["openai"] == PRISTINE and s["before"]["tasks"] == TASK_CONFIG
     assert (s["slot"], s["mode"]) == (0, "replace")
+    assert s["webui_url"] == env.ui.url
     assert "replaces the unused" in env.out and "applied" in env.out
     assert "apply ok key=sk-or-v1- replace slot=0 models=2" in env.log
 
@@ -439,6 +440,22 @@ def test_remove_with_a_given_snapshot_rolls_back_one_step(env):
         "vendor/model-a",
         "vendor/model-b:free",
     ]
+
+
+def test_remove_ignores_snapshots_of_another_open_webui(env):
+    """A testbed rehearsal shares the state dir; its snapshot must not restore live."""
+    env.store_key()
+    env.run("apply")
+    with FakeOpenWebUI() as other:
+        assert env.run("--webui-url", other.url, "remove") == 3
+        assert "no OWH snapshot of" in env.err
+        snap = str(env.snapshots()[0])
+        assert env.run("--webui-url", other.url, "remove", "--snapshot", snap) == 3
+        assert "was taken of" in env.err
+        assert not other.writes()
+        assert env.run("--webui-url", other.url, "status", "--no-login") == 0
+        assert "snapshots: 0" in env.out
+    assert env.run("remove") == 0
 
 
 def test_remove_without_snapshot_is_refused(env):

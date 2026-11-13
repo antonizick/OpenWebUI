@@ -56,5 +56,5 @@ def per_million(price: object) -> str:
         return "variable"
     if v == 0:
         return "free"
-    m = v * 1e6
-    return f"{m:.2f}" if m >= 0.1 else f"{m:.3f}"
+    text = f"{v * 1e6:.3f}".rstrip("0")  # 0.435 stays 0.435, 2.000 becomes 2.00
+    return text + "0" * (2 - len(text.split(".")[1]))

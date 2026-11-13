@@ -326,7 +326,13 @@ def cmd_apply(ctx: Ctx) -> int:
 
     snap = snapshot.save(
         ctx.state_dir,
-        {"url": url, "slot": p.slot, "mode": p.mode, "before": {"openai": openai, "tasks": tasks}},
+        {
+            "webui_url": ui.base_url,
+            "url": url,
+            "slot": p.slot,
+            "mode": p.mode,
+            "before": {"openai": openai, "tasks": tasks},
+        },
     )
     say(f"\nsnapshot of the prior values: {snap}")
     written = False
@@ -423,7 +429,7 @@ def cmd_status(ctx: Ctx) -> int:
             }
         except OwhError as e:
             report["openrouter_key"] = {"error": str(e)}
-    snaps = snapshot.all_paths(ctx.state_dir)
+    snaps = snapshot.all_paths(ctx.state_dir, ui.base_url)
     report["snapshots"] = {"count": len(snaps), "earliest": str(snaps[0]) if snaps else None}
 
     if a.json:
@@ -459,15 +465,19 @@ def cmd_status(ctx: Ctx) -> int:
 
 def cmd_remove(ctx: Ctx) -> int:
     a = ctx.args
-    path = Path(a.snapshot) if a.snapshot else snapshot.earliest(ctx.state_dir)
+    target = ctx.webui_url
+    path = Path(a.snapshot) if a.snapshot else snapshot.earliest(ctx.state_dir, target)
     if path is None:
-        raise Refused(f"no OWH snapshot in {snapshot.directory(ctx.state_dir)}; nothing to restore")
+        where = snapshot.directory(ctx.state_dir)
+        raise Refused(f"no OWH snapshot of {target} in {where}; nothing to restore")
     try:
         snap = snapshot.load(path)
     except paths.PermissionProblem as e:
         raise Refused(str(e)) from None
     except (OSError, ValueError) as e:
         raise ValidationError(f"cannot use snapshot {path}: {e}") from None
+    if str(snap.get("webui_url", "")).rstrip("/") != target:
+        raise Refused(f"snapshot {path.name} was taken of {snap.get('webui_url')}, not {target}")
     say(f"restoring from snapshot {path}")
     ui = signin(ctx)
     try:

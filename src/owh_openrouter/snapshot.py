@@ -2,7 +2,8 @@
 
 A snapshot holds the whole OpenAI connection config (with keys, so the file is 0600 in a 0700
 directory) and the whole task config as Open WebUI returned them, plus where OWH put its
-connection (`slot`, `mode`).
+connection (`slot`, `mode`) and which Open WebUI it was (`webui_url`), so a testbed
+rehearsal's snapshot is never used to "restore" the live instance.
 """
 
 from __future__ import annotations
@@ -36,14 +37,25 @@ def save(state_dir: Path, data: dict) -> Path:
     return path
 
 
-def all_paths(state_dir: Path) -> list[Path]:
+def all_paths(state_dir: Path, webui_url: str | None = None) -> list[Path]:
+    """Snapshots, oldest first; with `webui_url`, only those taken of that Open WebUI."""
     d = directory(state_dir)
-    return sorted(d.glob("*.json")) if d.is_dir() else []
+    paths = sorted(d.glob("*.json")) if d.is_dir() else []
+    if webui_url is None:
+        return paths
+    return [p for p in paths if _webui_url(p) == webui_url.rstrip("/")]
 
 
-def earliest(state_dir: Path) -> Path | None:
-    paths = all_paths(state_dir)
+def earliest(state_dir: Path, webui_url: str | None = None) -> Path | None:
+    paths = all_paths(state_dir, webui_url)
     return paths[0] if paths else None
+
+
+def _webui_url(path: Path) -> str | None:
+    try:
+        return str(json.loads(path.read_text(encoding="utf-8")).get("webui_url", "")).rstrip("/")
+    except (OSError, ValueError, AttributeError):
+        return None
 
 
 def load(path: Path) -> dict:

@@ -32,3 +32,12 @@ def test_load_refuses_open_permissions_and_foreign_files(tmp_path):
     f.write_text("[]")
     with pytest.raises(ValueError):
         snapshot.load(f)
+
+
+def test_filter_by_webui_url(tmp_path):
+    live = snapshot.save(tmp_path, {"before": {}, "webui_url": "http://127.0.0.1:8080"})
+    bed = snapshot.save(tmp_path, {"before": {}, "webui_url": "http://127.0.0.1:18080"})
+    (tmp_path / "snapshots" / "junk.json").write_text("not json")
+    assert snapshot.all_paths(tmp_path, "http://127.0.0.1:18080/") == [bed]
+    assert snapshot.earliest(tmp_path, "http://127.0.0.1:8080") == live
+    assert snapshot.earliest(tmp_path, "http://localhost:8080") is None
