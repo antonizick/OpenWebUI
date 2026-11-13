@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 LAUNCHER := $(HOME)/.local/bin/owh-openrouter
 ROOT := $(CURDIR)
-SH_FILES := $(wildcard scripts/*.sh) scripts/git-hooks/pre-commit
+SH_FILES := $(shell git ls-files "scripts/*.sh" "scripts/git-hooks/*")
 
 .PHONY: check test lint install uninstall
 
