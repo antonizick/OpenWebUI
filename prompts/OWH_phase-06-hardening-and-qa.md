@@ -31,3 +31,10 @@ New features; changing the live container, firewall or Open WebUI env without Ni
 
 ## Phase-specific docs
 `docs/OWH_THREAT-MODEL.md`, SECURITY.md, `docs/OWH_FINDINGS.md` (measurements), OSMods `Open WebUI.md` (verified results, any exposure change), CHANGELOG, ADRs. Then the standard close-out checklist.
+
+## Notes from Phase 05 (2026-11-13 13:05 CST)
+- The key **expires 2027-11-13** (`expires_at` in `/api/v1/key`): make `status` warn when expiry is near, or at least document rotation before then.
+- `/api/v1/key` `label` is a masked key preview, not the key's name, so `status` prints it as `sk-or-v1-… (12 chars)...275`. Consider showing only the last 3 characters, or dropping it.
+- `~/.local/state/owh/snapshots/` holds the rehearsal snapshot (testbed URL) next to the live one; both contain the key. Include them in the retention decision.
+- Commands that prompt must run in a real terminal (ADR-0020); any hands-off test uses `--password-stdin`.
+
