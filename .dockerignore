@@ -1,0 +1,16 @@
+.git
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.key
+.env
+.env.*
+*.db
+*.db-*
+*.sqlite*
+*.tar.gz
+*.tgz
+owh-state/
+scratch/

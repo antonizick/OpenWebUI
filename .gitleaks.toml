@@ -1,0 +1,14 @@
+title = "OWH gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "openrouter-api-key"
+description = "OpenRouter API key (sk-or-v1- followed by 64 hex characters; verified against the real key's shape)"
+regex = '''sk-or-v1-[0-9a-f]{40,}'''
+keywords = ["sk-or-v1-"]
+
+[allowlist]
+description = "Documented fake test keys (sk-or-v1-TESTKEY...)"
+regexes = ['''sk-or-v1-TESTKEY[A-Za-z0-9_-]*''']

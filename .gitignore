@@ -1,0 +1,30 @@
+# Python / uv
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+build/
+dist/
+*.egg-info/
+.coverage
+htmlcov/
+
+# Secrets and private data (never commit)
+*.key
+.env
+.env.*
+*.db
+*.db-*
+*.sqlite*
+*.tar.gz
+*.tgz
+owh-state/
+scratch/
+
+# Editor / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store

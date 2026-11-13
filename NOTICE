@@ -1,0 +1,7 @@
+OWH: OpenWebUI Hybrid
+Copyright (c) 2026 Nick Antonizick. All rights reserved.
+
+This project configures an existing Open WebUI installation and talks to the
+OpenRouter API. It does not include, bundle or redistribute Open WebUI or any
+OpenRouter software. Open WebUI and OpenRouter are separate products with their
+own licences and terms of service.

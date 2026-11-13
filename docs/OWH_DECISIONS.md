@@ -12,7 +12,7 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 | ADR-0006 | 2026-11-13 11:20 CST | Python stdlib-only CLI `owh-openrouter`, uv/pytest/ruff for dev | Accepted | 00 |
 | ADR-0007 | 2026-11-13 11:20 CST | Rehearse on a throwaway container before touching the live instance | Accepted | 00 |
 | ADR-0008 | 2026-11-13 11:20 CST | Owner brainstorming recorded as a planning session in the timeline | Accepted | 00 |
-
+| ADR-0009 | 2026-11-13 11:42 CST | Secret-scan hook: plain `core.hooksPath` script using `gitleaks git --staged`, plus optional pre-commit config | Accepted | 01 |
 ---
 
 ## ADR-0001: Project prefix `OWH`
@@ -75,3 +75,10 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 **Context.** Nick asked (2026-11-13, during planning) that the brainstorming timestamps appear in the timeline as planning, for an accurate record.
 **Decision.** A Phase Log entry `Planning: owner brainstorming` with `started 2026-11-13 10:03 CST · finished 2026-11-13 10:59 CST`, the first and last timestamps in `OWH_Brainstorming.md`. The generator already draws `Planning:` entries in the Planning lane; no script change.
 **Consequences.** The Planning lane starts at 10:03, before the Phase 00 session (11:02).
+
+## ADR-0009: Secret-scan hook via `core.hooksPath`
+**Recorded.** 2026-11-13 11:42 CST (Phase 01)
+**Context.** The phase prompt asked for `gitleaks protect --staged`. The installed gitleaks (8.30.1) replaces `protect` with `gitleaks git --staged`.
+**Options considered.** Only the pre-commit framework; only a plain hook; both.
+**Decision.** A plain `scripts/git-hooks/pre-commit` (enabled with `git config core.hooksPath scripts/git-hooks`) running `gitleaks git --staged --redact --config .gitleaks.toml`, plus an optional `.pre-commit-config.yaml` for the pre-commit framework. The hook fails closed: it refuses to commit if gitleaks is missing. Rule: `sk-or-v1-[0-9a-f]{40,}` (the real key is `sk-or-v1-` + 64 hex characters, checked without printing it); allowlist only `sk-or-v1-TESTKEY...`.
+**Consequences.** Works with no extra tooling. `core.hooksPath` is per clone, so each fresh clone must run the one-line setup (documented in CONTRIBUTING); CI gitleaks is the backstop.
