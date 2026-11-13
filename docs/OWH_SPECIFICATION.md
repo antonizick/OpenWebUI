@@ -72,3 +72,9 @@ Verified against Open WebUI v0.13.3 and OpenRouter's live API; evidence is in `d
 - **R5 (refined).** Because the allowlist is applied through `model_ids`, Open WebUI never fetches OpenRouter's model list. An offline or slow OpenRouter adds **no** delay to the model list (measured at about 0.1 s against about 11 s without `model_ids`). `AIOHTTP_CLIENT_TIMEOUT_MODEL_LIST` (default 10 s) is not tuned. The allowlist must never be empty. A chat on an `OR.` model while OpenRouter is down fails with "Server Connection Error"; local chats are unaffected.
 - **R6 (resolved).** Base URL `https://openrouter.ai/api/v1`; key `sk-or-v1-` + 64 hex (73 chars); key info `GET /api/v1/key`; prices are per-token USD strings. Key validation uses `/api/v1/key` only (ADR-0013). Open WebUI endpoints: `POST /api/v1/auths/signin`, `GET /openai/config`, `POST /openai/config/update` (always send `ENABLE_OPENAI_API`), `GET`/`POST /api/v1/tasks/config[/update]` (full object).
 - **R9 (corrected).** Open WebUI always sends `HTTP-Referer: https://openwebui.com/` and `X-Title: Open WebUI` to openrouter.ai URLs. Per-connection `headers` can override them. OWH keeps the defaults and sets no custom headers (ADR-0012).
+
+#### 3.7 Amendments v3 (2026-11-13 12:45 CST, Phase 05 owner answers)
+- **S5 (replaced).** OWH does not manage spend. Any spending limit on the key or the account is Nick's, set on openrouter.ai (ADR-0018). The allowlist still keeps expensive models out of the picker, and `models` shows prices. A2's "with its own spending limit" is no longer a requirement.
+- **S4 (settled).** Owner question 3: OpenRouter's account privacy settings allow providers that log or train on prompts (ADR-0019). The docs state that `OR.` chats may be logged or used for training by the upstream provider.
+- **§3.5 (updated).** Question 1 answered 2026-11-13 12:16 CST (ADR-0014); questions 2 and 3 answered 2026-11-13 12:45 CST (ADR-0018, ADR-0019).
+

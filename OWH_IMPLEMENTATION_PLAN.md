@@ -100,8 +100,8 @@ gantt
 | # | Question | Status / proposed default | Needed by |
 |---|---|---|---|
 | 1 | Which OpenRouter models go on the allowlist? | Answered 2026-11-13 12:16 CST: all five Phase 03 proposals plus three added by Nick, eight in total: `anthropic/claude-sonnet-5.5`, `anthropic/claude-haiku-5.5`, `google/gemini-4-hydrogen`, `openai/gpt-6.1-terra`, `google/gemma-4-31b-it:free`, `deepseek/deepseek-v4.1-flash-1017`, `xiaomi/mimo-v2.6-pro`, `z-ai/glm-5.3-flash` (ADR-0014; prices in `docs/OWH_FINDINGS.md` §7). Phase 05 writes them to `config/openrouter-models.txt` | Phase 05 |
-| 2 | Spending limit for the new dedicated key | Open (asked 2026-11-13 11:20 CST). Proposed default: $20/month, set on openrouter.ai at key creation | Phase 05 |
-| 3 | OpenRouter account privacy: allow providers that log or train on prompts? | Open (asked 2026-11-13 11:20 CST). Proposed default: disallow training/logging providers; ZDR-only off | Phase 05 |
+| 2 | Spending limit for the new dedicated key | Answered 2026-11-13 12:45 CST: no limit from this project; spend is not managed at the application layer, and any limit on the key or account is Nick's on openrouter.ai (ADR-0018) | Phase 05 |
+| 3 | OpenRouter account privacy: allow providers that log or train on prompts? | Answered 2026-11-13 12:45 CST: allow them (ADR-0019) | Phase 05 |
 | 4 | Licence, if the repo is ever made public | Deferred (2026-11-13 11:20 CST). Default: private, "All rights reserved" | Phase 07 |
 
 ## Phase Log
