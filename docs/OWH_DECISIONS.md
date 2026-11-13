@@ -27,6 +27,7 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 | ADR-0021 | 2026-11-13 13:45 CST | Port 8080 exposure (S6): keep as is, documented; no binding or firewall change | Accepted | 06 |
 | ADR-0022 | 2026-11-13 13:45 CST | Snapshot retention: keep the live pre-apply snapshot, delete testbed snapshots, prune by hand | Accepted | 06 |
 | ADR-0023 | 2026-11-13 13:45 CST | `set-key`/`status` warn 30 days before key expiry and stop showing the masked `label` | Accepted | 06 |
+| ADR-0024 | 2026-11-13 17:31 CST | Release: MIT licence and a public repo (owner question 4) | Accepted | 07 |
 ---
 
 ## ADR-0001: Project prefix `OWH`
@@ -210,3 +211,9 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 **Context.** The dedicated key has `expires_at` 2027-11-13 (findings §6a). After that, `OR.` chats fail. OpenRouter's `label` is a masked preview of the key itself, which the scrubber turned into `sk-or-v1-… (12 chars)...275`.
 **Decision.** `set-key` and `status` show `limit`, `limit_remaining`, `limit_reset`, `usage`, `usage_monthly` (set-key) and `expires_at`. When `expires_at` is 30 days away or less, or already past, they print a warning on stderr. `status --json` carries it as `openrouter_key.warning`. Exit codes do not change. A timestamp without a time zone or one that does not parse gives no warning, rather than a guess. `label` is no longer shown.
 **Consequences.** Nick sees the expiry in any `status` run from 2027-10-14 on. Rotation steps are in SECURITY.md.
+
+## ADR-0024: Release: MIT licence and a public repo
+**Recorded.** 2026-11-13 17:31 CST (Phase 07)
+**Context.** Owner question 4 was deferred, with the default "private, All rights reserved". At release, Nick chose to make the repo public and picked MIT (options: MIT, Apache-2.0, public with all rights reserved, stay private).
+**Decision.** LICENSE is the MIT licence; NOTICE and CONTRIBUTING say so; `antonizick/OpenWebUI` is made public. No GitHub release is created (not asked for). Before the change: gitleaks over the full history found no leaks, no key, database, `.env` or backup file is tracked, and the LAN and Tailscale addresses and the admin e-mail were removed from the current files.
+**Consequences.** Git history still holds those addresses and the e-mail (low sensitivity; history is not rewritten without Nick's say-so). The threat model's description of the firewall posture is now public. To go private again: `gh repo edit antonizick/OpenWebUI --visibility private --accept-visibility-change-consequences` (copies already made stay out there).

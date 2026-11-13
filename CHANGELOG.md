@@ -4,7 +4,10 @@ All notable changes are recorded here. Format: [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-13 17:28 CST
+
 ### Added
+- Phase 07: licence MIT and repo made public on Nick's confirmation (ADR-0024, owner question 4 answered); host addresses and admin e-mail removed from the current docs; final `docs/OWH_USER-GUIDE.md` (daily use, add or remove a model, spend, troubleshooting, full undo), `docs/OWH_FINAL-REPORT.md` (Definition of done with evidence, spend, residual risks, generated timeline), README and SECURITY final, plan Definition of done ticked.
 - Phase 06: `docs/OWH_THREAT-MODEL.md` (assets, key stores, threats, S6 options); `docs/OWH_FINDINGS.md` §8 (secret sweep, upgrade survival, offline timings, 402 behaviour, exposure facts); testbed test `tests/integration/test_hardening.py` (recreate with `open-webui-upgrade`'s own recipe, dead-upstream timings, local chat offline, 402 pass-through); `set-key`/`status` warn when the key expires within 30 days (`status --json`: `openrouter_key.warning`); ADR-0021…0023; spec Amendments v4; dev licence audit in THIRD_PARTY_NOTICES.
 - Phase 00: specification with amendments, ADR log, implementation plan, shared instructions, phase prompts, `/phase` and `/phase-add` commands, `CLAUDE.md`.
 - Phase 01: README, LICENSE, NOTICE, THIRD_PARTY_NOTICES, SECURITY, CONTRIBUTING, CODE_OF_CONDUCT, ignore files, `.editorconfig`, gitleaks config, pre-commit hook (`scripts/git-hooks/pre-commit` and pre-commit framework), GitHub CI/templates/Dependabot, `docs/OWH_ARCHITECTURE.md`.

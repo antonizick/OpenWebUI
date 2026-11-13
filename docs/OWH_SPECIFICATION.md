@@ -17,7 +17,7 @@ Restated goal: one Open WebUI instance, one model picker, two backends. Picking 
 | Ollama | 0.40.7, `prometheus-ollama.service` (user unit, `127.0.0.1:11434`, `PartOf=prometheus.target`). Models: `qwen3:8b`, `qwen3:4b-instruct`, `qwen3:1.7b`, `gemma2:9b`, `nomic-embed-text` |
 | Container env (relevant) | `OLLAMA_BASE_URL=http://127.0.0.1:11434`, `DEFAULT_MODELS=qwen3:8b`, `OPENAI_API_BASE_URL=` and `OPENAI_API_KEY=` (empty), web search on (DuckDuckGo) |
 | Stored config (`webui.db`, `config` table, key/value rows) | `ollama.enable=true`, `ollama.base_urls=["http://127.0.0.1:11434"]`; **`openai.enable=true` with one dead connection** `openai.api_base_urls=["https://api.openai.com/v1"]`, `openai.api_keys=[""]`, `openai.api_configs={}`; `direct.enable=false`; `task.model.default=""`, `task.model.external=""`; title, tags, follow-up and search-query tasks enabled |
-| Users | one admin (`nick@antonizick.com`), signup off |
+| Users | one admin, signup off |
 | Default chat model | Workspace Model **Qwen3 8B (Web)** (`qwen3-8b-web`, wraps `qwen3:8b`) |
 | Existing OpenRouter key | `~/.config/ai-provider/openrouter.key` (0600), used by Claude Code's provider switch. Account credit is shared by every key on the account |
 | Host | Omarchy (Arch) Linux, kernel 7.2.8, RTX 2070 Max-Q 8 GB, Docker 29.9.2, Python 3.14.8, uv 0.13.0, gh 2.103.2 (logged in as `antonizick`), gitleaks, shellcheck, jq |
@@ -63,7 +63,7 @@ The project lives in one Git repository, `/home/nick/Work/OpenWebUI`, pushed to 
 1. **Open (needed by Phase 05).** Which OpenRouter models go on the allowlist? Phase 03 proposes a short list from OpenRouter's live models endpoint with real prices (for example a strong model, a cheap fast model, a long-context model, a coding model); Nick confirms or edits it.
 2. **Open (needed by Phase 05).** Spending limit for the new key. Proposed default: **$20 per month**, set on openrouter.ai when the key is created.
 3. **Open (needed by Phase 05).** OpenRouter account privacy settings: allow providers that may log or train on prompts? Proposed default: turn off training/logging providers in openrouter.ai privacy settings; ZDR-only stays off unless Nick wants it.
-4. **Deferred (Phase 07, only if ever published).** Licence. Default: repo stays private, LICENSE states "All rights reserved".
+4. **Deferred (Phase 07, only if ever published).** Licence. Default: repo stays private, LICENSE states "All rights reserved". **Decided 2026-11-13 17:31 CST (ADR-0024): public, MIT.**
 
 #### 3.6 Amendments v2 (2026-11-13 12:06 CST, Phase 03 findings)
 Verified against Open WebUI v0.13.3 and OpenRouter's live API; evidence is in `docs/OWH_FINDINGS.md`, which supersedes the "expected" values in R6.

@@ -1,5 +1,5 @@
 OWH: OpenWebUI Hybrid
-Copyright (c) 2026 Nick Antonizick. All rights reserved.
+Copyright (c) 2026 Nick Antonizick. Licensed under the MIT License (see LICENSE).
 
 This project configures an existing Open WebUI installation and talks to the
 OpenRouter API. It does not include, bundle or redistribute Open WebUI or any
