@@ -10,7 +10,11 @@ dependencies = []
 owh-openrouter = "owh_openrouter.cli:main"
 
 [dependency-groups]
-dev = ["pytest", "ruff"]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -22,6 +26,14 @@ packages = ["src/owh_openrouter"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = ["testbed: needs Docker and the throwaway testbed; runs only with OWH_TESTBED=1"]
+
+[tool.coverage.run]
+source = ["src"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
 
 [tool.ruff]
 line-length = 100

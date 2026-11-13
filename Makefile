@@ -3,12 +3,16 @@ LAUNCHER := $(HOME)/.local/bin/owh-openrouter
 ROOT := $(CURDIR)
 SH_FILES := $(shell git ls-files "scripts/*.sh" "scripts/git-hooks/*")
 
-.PHONY: check test lint install uninstall
+.PHONY: check test test-testbed lint install uninstall
 
 check: test lint
 
 test:
-	uv run pytest
+	uv run pytest --cov
+
+# Needs Docker and the v0.13.3 image; creates and removes the throwaway testbed.
+test-testbed:
+	OWH_TESTBED=1 uv run pytest -m testbed -v
 
 lint:
 	uv run ruff check .
