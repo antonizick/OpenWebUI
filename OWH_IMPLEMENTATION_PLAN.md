@@ -1,7 +1,7 @@
 # OWH: OpenWebUI Hybrid Implementation Plan
 
 **Spec:** [`docs/OWH_SPECIFICATION.md`](docs/OWH_SPECIFICATION.md). **Decisions:** [`docs/OWH_DECISIONS.md`](docs/OWH_DECISIONS.md). **Agent rules:** [`CLAUDE.md`](CLAUDE.md). **Shared phase instructions:** [`prompts/OWH_shared-instructions.md`](prompts/OWH_shared-instructions.md)
-**Last updated:** 2026-11-13 12:37 CST (Phase 04 complete)
+**Last updated:** 2026-11-13 13:25 CST (Phase 05 complete)
 
 > ⚠️ **Mandatory:** every agent that works on this project keeps this file accurate. **Before doing any other work, set your phase to `🔄 In progress` and commit that change to `main`** (claim protocol: `prompts/OWH_shared-instructions.md` §1a). Other agents read this table from `main`. At the end, set it to `✅ Complete` or `⛔ Blocked` and add a Phase Log entry. See `CLAUDE.md`.
 
@@ -33,7 +33,7 @@ Each phase is claimed by a `chore(plan): start phase NN` commit on `main` and ru
 | 02 | Tool scaffold & quality gates | uv project, CLI skeleton, fakes, pytest/ruff/shellcheck/gitleaks in CI | Sonnet 5.5 (`/model sonnet`) | 01 | ✅ Complete | [`prompts/OWH_phase-02-tool-scaffold.md`](prompts/OWH_phase-02-tool-scaffold.md) | auto |
 | 03 | Verification spike | Prove Open WebUI 0.13.3 and OpenRouter API facts on a throwaway container; propose the model shortlist | Opus 5.5 (`/model opus`) | 01 | ✅ Complete | [`prompts/OWH_phase-03-verification-spike.md`](prompts/OWH_phase-03-verification-spike.md) | auto |
 | 04 | `owh-openrouter` CLI | `set-key`, `models`, `apply`, `status`, `remove`; idempotent, snapshot/restore, tested against fakes and the testbed | Opus 5.5 (`/model opus`) | 02, 03 | ✅ Complete | [`prompts/OWH_phase-04-owh-openrouter-cli.md`](prompts/OWH_phase-04-owh-openrouter-cli.md) | auto |
-| 05 | Rehearsal & live deploy | Real key, rehearsal on the testbed, backup, apply to the live instance, verify both backends in the UI, OSMods docs | Opus 5.5 (`/model opus`) | 04 | 🔄 In progress | [`prompts/OWH_phase-05-rehearsal-and-live-deploy.md`](prompts/OWH_phase-05-rehearsal-and-live-deploy.md) | owner |
+| 05 | Rehearsal & live deploy | Real key, rehearsal on the testbed, backup, apply to the live instance, verify both backends in the UI, OSMods docs | Opus 5.5 (`/model opus`) | 04 | ✅ Complete | [`prompts/OWH_phase-05-rehearsal-and-live-deploy.md`](prompts/OWH_phase-05-rehearsal-and-live-deploy.md) | owner |
 | 06 | Hardening, security & QA | Threat model, secret scans, upgrade survival, offline behaviour, spend guard, exposure review, follow-ups | Opus 5.5 (`/model opus`) | 05 | ⬜ Not started | [`prompts/OWH_phase-06-hardening-and-qa.md`](prompts/OWH_phase-06-hardening-and-qa.md) | review |
 | 07 | Release & handover | User guide, final report with timeline, CHANGELOG 1.0.0, vault and OSMods final, private repo pushed | Sonnet 5.5 (`/model sonnet`) | 06 | ⬜ Not started | [`prompts/OWH_phase-07-release-and-handover.md`](prompts/OWH_phase-07-release-and-handover.md) | review |
 
@@ -201,3 +201,28 @@ Newest entries at the bottom. Format: `### YYYY-MM-DD HH:MM TZ: Phase NN: <title
   - `status --no-login` can show only version, key file, key info and snapshots, because the task and model endpoints need a session.
   - Phase 05 records the real `/api/v1/key` fields.
 - No host OS changes (`make install` is Phase 05).
+
+### 2026-11-13 13:25 CST: Phase 05: Rehearsal & live deploy (✅ Complete)
+- **Timeline:** started 2026-11-13 12:43 CST (claim commit 0efb977) · finished 2026-11-13 13:25 CST · merged MERGED_TS
+- **Model:** ran as Opus 5.5 (plan lists Opus 5.5)
+- **Nick's acceptance (in session):** "both backends work, local and OpenRouter chats answered".
+- Owner questions answered 2026-11-13 12:45 CST: Q2 no spend management in OWH; any limit is Nick's on openrouter.ai (ADR-0018). Q3 allow logging/training providers (ADR-0019). Spec Amendments v3. Phase 06 prompt (spend guard) adjusted.
+- Built and done:
+  - `config/openrouter-models.txt` = the eight ADR-0014 IDs; `owh-openrouter models` showed all known with prices.
+  - Dedicated key set by Nick with `set-key`: `~/.config/owh/openrouter.key` 0600 (dir 0700), different from the ai-provider key, whose mtime (2026-10-17 11:28:08) is unchanged. `/api/v1/key`: limit 50, `limit_reset` monthly, **`expires_at` 2027-11-13**; all fields in `docs/OWH_FINDINGS.md` §6a.
+  - `make install` from the main checkout: `~/.local/bin/owh-openrouter`, works from a new login shell.
+  - Rehearsal on the testbed with the real key: apply → 13 models (5 local, 8 `OR.`) → one chat on `OR.z-ai/glm-5.3-flash` replied "OK" ($0.00000766) → Ollama logged 3 `POST /api/chat` (title, tags, follow-ups) and the key's usage equalled that one chat → re-apply no-op → `remove` restored the empty `api.openai.com` entry and task model `''` → `down` (no container or volume left).
+  - Backup: `~/.local/share/open-webui-backups/webui.db.20261113-125838.pre-owh.bak` (0600, integrity ok, 403 config rows, 31 chats).
+  - Live (Nick in a terminal): `apply --dry-run` (diff identical to the rehearsal), `apply` at 13:03 CST (snapshot `~/.local/state/owh/snapshots/20261113T190320.791540Z.json`, tagged `http://127.0.0.1:8080`), second `apply` "already up to date; nothing written", `status`: connection 0 OpenRouter, prefix OR, 8 allowlisted, task model `qwen3:4b-instruct`, 8 OpenRouter + 5 local models. Container not restarted (StartedAt `2026-11-13T17:40:48.65503915Z` throughout).
+  - UI: Nick's OpenRouter chat on `OR.z-ai/glm-5.3-flash` (two turns) got a locally generated title; key usage $0.0173995 = rehearsal + those two turns exactly, so no background task went to OpenRouter.
+  - OSMods: `Open WebUI.md` (new section "OpenRouter models (OWH, 2026-11-13 13:05 CST)", corrected "everything stays local", container config and models) and `OSMODs README.md` (at a glance, section 5, where things live, last updated).
+- Deviations:
+  - `!` has no TTY: the first `set-key` crashed in `getpass` (EOFError, nothing read or written). Fixed: hidden prompts refuse with exit 3 and a hint (ADR-0020, 4 new tests). Nick ran every prompting command in a separate terminal; the Phase 05 prompt and user guide are corrected.
+  - Backup through SQLite's backup API instead of `docker cp webui.db`, because the DB is in WAL mode with recent writes in `-wal` (ADR-0020).
+  - `owh-testbed.sh`: the cold start (≈1.1 GB embedding download) took ≈150 s, over the 120 s wait, and the rerun skipped admin creation. Now 300 s, and `ensure_admin` runs on an existing container too.
+  - Live `apply` ran from the worktree (`uv run --project …-phase-05`), since the launcher points at the main checkout, which lacked the allowlist and fix until this merge.
+  - The shipped-allowlist test now pins the eight IDs.
+- Spend: build tests $0.0000077 (rehearsal). Nick's own UI check $0.0174. Total key usage $0.0173995 (≤ $0.25).
+- Tests: `make check` green: 151 passed, 1 skipped, coverage 96.8 %, ruff, shellcheck, gitleaks no leaks. Rehearsal transcript and live outputs as above.
+- Follow-ups (Phase 06 prompt notes added): key expiry warning or rotation reminder before 2027-11-13; `status` shows the masked `label` awkwardly; the rehearsal snapshot (testbed URL, holds the key) sits next to the live one, so include it in snapshot retention; a benign Ollama 500 at 13:07:43 was a client-cancelled request.
+- Host OS changes: `~/.local/bin/owh-openrouter`, `~/.config/owh/`, `~/.local/state/owh/`, the pre-OWH backup, and Open WebUI's stored config (connection 0, `TASK_MODEL_EXTERNAL`). All documented in OSMods. **Undo:** `owh-openrouter remove [--delete-key]`, `make uninstall`, revoke the key; or restore the backup.
