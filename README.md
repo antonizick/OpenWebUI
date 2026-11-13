@@ -13,7 +13,7 @@ Local (Ollama) models stay on the laptop. A chat with an OpenRouter model (shown
 | `owh-openrouter set-key [--from-file F] [--force]` | Read the dedicated key at a hidden prompt, check its format and validate it live (`GET /api/v1/key`), then store it in `~/.config/owh/openrouter.key` (0600) |
 | `owh-openrouter models [--search TEXT] [--json]` | Show the allowlisted models with live prices ($/M in/out) and flag unknown IDs (exit 1). `--search` searches all OpenRouter models |
 | `owh-openrouter apply [--dry-run] [--task-model ID]` | Sign in as admin and write the OpenRouter connection (prefix `OR`, `model_ids` = allowlist) and a local task model. Saves a snapshot before writing, then verifies. A re-run is a no-op |
-| `owh-openrouter status [--json] [--no-login]` | Read-only: version, connections (keys redacted), task model, picker counts, key limit/usage, snapshots |
+| `owh-openrouter status [--json] [--no-login]` | Read-only: version, connections (keys redacted), task model, picker counts, key limit/usage/expiry (warns 30 days ahead), snapshots |
 | `owh-openrouter remove [--snapshot F] [--delete-key]` | Restore what OWH changed from the earliest snapshot of this Open WebUI, then verify. The snapshot is kept |
 
 Global options go before the command (`--webui-url`, `--openrouter-url`, `--state-dir`, `--config-dir`, `--timeout`, `--json`, `--allow-remote`). `apply`, `status` and `remove` take `--email` and `--password-stdin`.
@@ -38,6 +38,7 @@ Rehearsals use a throwaway Open WebUI: `scripts/owh-testbed.sh up|status|token|d
 - [Specification](docs/OWH_SPECIFICATION.md): canonical spec (the Amendments override earlier sections)
 - [Decisions](docs/OWH_DECISIONS.md): ADR log
 - [Architecture](docs/OWH_ARCHITECTURE.md): current and target layout, real endpoints
-- [Findings](docs/OWH_FINDINGS.md): verified Open WebUI 0.13.3 and OpenRouter behaviour (Phase 03)
+- [Findings](docs/OWH_FINDINGS.md): verified Open WebUI 0.13.3 and OpenRouter behaviour (Phase 03), hardening measurements (Phase 06)
+- [Threat model](docs/OWH_THREAT-MODEL.md): assets, key stores, threats, port 8080 decision (Phase 06)
 - [User guide](docs/OWH_USER-GUIDE.md): install, set-key, choose models, apply, status, remove (draft)
 - [Security policy](SECURITY.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)

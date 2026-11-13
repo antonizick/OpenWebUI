@@ -21,7 +21,7 @@ Create a **new, dedicated** key on openrouter.ai for Open WebUI. Do not reuse th
 ```
 owh-openrouter set-key
 ```
-The key is read at a hidden prompt. The command trims whitespace and rejects control characters (stray arrow keys) or anything that is not `sk-or-v1-` + 64 hex characters. It checks the key live with OpenRouter (`GET /api/v1/key`). Only then does it write `~/.config/owh/openrouter.key` (directory 0700, file 0600, atomic). It prints the first 9 characters, the length, and the key's label, limit and usage.
+The key is read at a hidden prompt. The command trims whitespace and rejects control characters (stray arrow keys) or anything that is not `sk-or-v1-` + 64 hex characters. It checks the key live with OpenRouter (`GET /api/v1/key`). Only then does it write `~/.config/owh/openrouter.key` (directory 0700, file 0600, atomic). It prints the first 9 characters, the length, and the key's limit, usage and `expires_at`, and warns when the key expires within 30 days (ADR-0023).
 - A different stored key is replaced only after you confirm, or with `--force`.
 - `--from-file PATH` reads the key from a 0600 file instead of the prompt.
 - Errors: "key rejected" (401), "out of credit or the key's spending limit is reached" (402), "rate limited" (429).
@@ -60,7 +60,7 @@ owh-openrouter status --json
 - each connection: URL, on or off, prefix, number of allowlisted models, redacted key, and whether it matches the key file;
 - the task model, and whether it is local;
 - how many OpenRouter and local models the picker lists;
-- the OpenRouter key's limit and usage;
+- the OpenRouter key's limit, usage and expiry, with a warning from 30 days before `expires_at` (ADR-0023);
 - the number of snapshots.
 
 ## 6. Undo: `remove`
@@ -72,7 +72,15 @@ owh-openrouter remove --delete-key       # also delete ~/.config/owh/openrouter.
 `remove` restores only what OWH changed: its connection slot, the OpenAI on/off switch and the cloud task model. Connections you added later stay. The snapshot is kept. A second `remove` does nothing. If you delete the key file, also revoke the key on openrouter.ai.
 
 ## 7. Rotate the key
-Create a new key on openrouter.ai, then `owh-openrouter set-key` (confirm the replacement) and `owh-openrouter apply`. Then revoke the old key on openrouter.ai.
+Do this before `expires_at` (the live key expires 2027-11-13; `status` warns from 30 days before).
+1. Create a new key on openrouter.ai (set its limit there if you want one).
+2. In a terminal window: `owh-openrouter set-key` (confirm the replacement), then `owh-openrouter apply`. `apply` saves a new snapshot that holds the **old** key.
+3. Check one `OR.` chat, then revoke the old key on openrouter.ai.
+4. Delete the snapshots newer than the earliest one in `~/.local/state/owh/snapshots/` (keep the earliest: it is the undo point for `remove`, ADR-0022).
+
+## 8. When OpenRouter is down or out of credit
+- **OpenRouter unreachable:** the model list is unaffected (the allowlist means Open WebUI never asks OpenRouter for it); local models work as usual. An `OR.` chat fails at once with "Open WebUI: Server Connection Error" when the connection is refused; an unreachable network can make that one chat wait up to 300 s. Measured in `docs/OWH_FINDINGS.md` §8.3.
+- **Key limit reached or credit used up:** OpenRouter answers chats with HTTP 402, and Open WebUI shows the error in the chat (§8.4 of the findings has the exact text). Local models keep working. Raise the limit or add credit on openrouter.ai; `owh-openrouter status` shows `limit_remaining`, and `set-key`/`status` report "out of credit or the key's spending limit is reached" for a 402 on the key check.
 
 ## What was run on the live instance (2026-11-13 13:05 CST, Phase 05)
 1. `set-key` in a terminal window (the `!` attempt refused; see §1). The key is 0600, separate from `~/.config/ai-provider/openrouter.key`, which was untouched.
@@ -113,6 +121,6 @@ Global options go **before** the command: `owh-openrouter --webui-url http://127
 | What | Where |
 |---|---|
 | Key | `~/.config/owh/openrouter.key` (0600), plus Open WebUI's `webui.db` and its backups after `apply` (SECURITY.md) |
-| Snapshots | `~/.local/state/owh/snapshots/*.json` (0600, contain the prior keys) |
+| Snapshots | `~/.local/state/owh/snapshots/*.json` (0600; the prior connection config, so the prior key if there was one; the live one holds none, ADR-0022) |
 | Action log | `~/.local/state/owh/owh.log` (one line per run, no secrets) |
 | Allowlist | `config/openrouter-models.txt` in the repo |

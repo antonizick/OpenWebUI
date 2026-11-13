@@ -121,6 +121,8 @@ class FakeOpenRouter(FakeServer):
         super().__init__()
         self.valid_key = valid_key
         self.key_status = 200  # set to 402/429 to simulate those answers
+        self.expires_at: str | None = "2099-01-01T00:00:00.000Z"
+        self.chat_status = 200  # 402 simulates an exhausted key limit or account credit
         self.models = [
             {
                 "id": "vendor/model-a",
@@ -162,6 +164,7 @@ class FakeOpenRouter(FakeServer):
                     "limit_remaining": 19.5,
                     "limit_reset": "monthly",
                     "usage": 0.5,
+                    "expires_at": self.expires_at,
                 }
             }
         if path == "/api/v1/models" and method == "GET":
@@ -169,6 +172,8 @@ class FakeOpenRouter(FakeServer):
         if path == "/api/v1/chat/completions" and method == "POST":
             if auth != f"Bearer {self.valid_key}":
                 return self._err(401, "User not found.")
+            if self.chat_status != 200:
+                return self._err(self.chat_status, "simulated: insufficient credits")
             return 200, {
                 "id": "gen-fake",
                 "object": "chat.completion",

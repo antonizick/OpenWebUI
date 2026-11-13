@@ -30,3 +30,9 @@ New features or config changes on the live instance.
 
 ## Phase-specific docs
 User guide, final report, README, CHANGELOG, SECURITY, OSMods notes, vault note. Then the standard close-out checklist.
+
+## Notes from Phase 06 (2026-11-13 13:47 CST)
+- Definition of done, "spending limit": OWH sets none on purpose (ADR-0018); the key's $50/month limit is Nick's. Tick it with that evidence and don't treat it as a gap.
+- S6 is settled: port 8080 stays as is (ADR-0021). The threat model §7 lists the residual risks to repeat in the final report.
+- The upgrade-survival and offline evidence is `tests/integration/test_hardening.py` (`make test-testbed`) and `docs/OWH_FINDINGS.md` §8.
+- Out of OWH's scope, reported to Nick: `~/.bash_history` holds the AI Provider Switch key (threat model §8). Mention it in the handover if it is still open.

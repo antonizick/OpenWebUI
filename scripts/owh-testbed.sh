@@ -130,6 +130,8 @@ cmd_down() {
 		docker volume rm "$VOLUME" >/dev/null
 	fi
 	rm -rf "$STATE_DIR"
+	# Drop ~/.local/state/owh too if the testbed was all that was in it.
+	rmdir "$(dirname "$STATE_DIR")" 2>/dev/null || true
 	echo "owh-testbed: down (container, volume and $STATE_DIR removed)"
 }
 

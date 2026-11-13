@@ -1,4 +1,4 @@
-# OWH: Verification Findings (Phase 03)
+# OWH: Verification Findings (Phase 03, hardening in Phase 06)
 
 **Recorded:** 2026-11-13 12:06 CST (Phase 03, verification spike). **Overrides** the "expected" endpoint list in spec R6 and any earlier assumption it contradicts (spec Amendments v2, §3.6).
 
@@ -183,6 +183,54 @@ Notes for Nick's choice:
 - Spend guide at the $20/month default (owner question 2): about 2 M Sonnet output tokens, or about 40 M Haiku output tokens.
 
 ---
+
+## 8. Hardening measurements (Phase 06, 2026-11-13 13:39–13:49 CST)
+Raw transcripts were printed by `make test-testbed` (`tests/integration/test_hardening.py`) and by the read-only sweep. Only counts and file names are given, never key material.
+
+### 8.1 Secret sweep (live system, read-only, 13:39 CST)
+The search used the key prefix `sk-or-v1-` and the key's last 16 characters, passed to `grep` through a pipe or an fd so they were never in argv. **Hits on the OWH key** (tail):
+
+| Place | Hits | Note |
+|---|---|---|
+| `~/.config/owh/openrouter.key` | 1 | expected; 0600, dir 0700 |
+| live `webui.db` (read with a throwaway `--network none` container, volume mounted `:ro`, SQLite `immutable=1`) | 1 row (`config`, `openai.api_keys`) | expected; no other table and no other file in the volume; `-wal` 0 |
+| `~/.local/state/owh/snapshots/*.json` (2 at the time) | 0 | snapshots hold the prior config, which had no key (ADR-0022) |
+| `~/.local/state/owh/owh.log` | 0 | 11 lines carry the 9-character prefix by design |
+| `~/.bash_history`, `~/.local/state/open-webui-toggle.log` | 0 | `~/.bash_history` has 1 line with a **different** real key (`ai-provider set-key sk-or-v1-…`, the AI Provider Switch key); out of scope, reported to Nick |
+| `docker inspect open-webui`, `docker logs open-webui` (all and since apply, 642 lines), user journal since 12:40 | 0 | |
+| repo working trees, every commit of every branch (`git grep` over `rev-list --all`), `gitleaks` | 0 | the 17 repo files that hold the prefix are docs, the scrubber, the gitleaks config and tests with `TESTKEY`/all-zero fakes |
+| `~/Documents` (tail, and any `sk-or-v1-<64 hex>`) | 0 / 0 | |
+| process list | 0 | |
+| upgrade backups (`~/.local/share/open-webui-upgrade/backups/`, 2), manual backups (`~/.local/share/open-webui-backups/`, 3 + `-wal`/`-shm`) | 0 | all predate OWH. Dirs 0700. Files 0600, except two 2026-11-09 manual copies at 0644 inside the 0700 dir |
+
+The live container was **stopped** during the sweep (exited cleanly at 13:37:14 CST after a start at 13:31:45 CST; Nick's doing, before this phase). The stored config survived that restart: the key row was present.
+
+### 8.2 Upgrade survival (R2), testbed
+`up` → `apply` (fake key, the real eight-ID allowlist served by the fake OpenRouter) → recreate the container with `make_recipe` and `create_from_recipe` **sourced from `~/.local/bin/open-webui-upgrade`** (stop, rename to `-prev`, create, start, the same image) → compare.
+- The recipe carried `network: host`, the bind `owh-test-owu-data:/app/backend/data`, and the env diff `WEBUI_SECRET_KEY, HOST, PORT, OLLAMA_BASE_URL, ENABLE_VERSION_UPDATE_CHECK`. The new container ID was different; `/health` came back after 20 s.
+- The 5 OWH rows (`openai.enable`, `openai.api_base_urls`, `openai.api_keys`, `openai.api_configs`, `task.model.external`) were byte-identical. `status --json` was identical for connections, task model, model counts and the enable switch: 8 `OR.` and 5 local models, task model `qwen3:4b-instruct`.
+- **The script's post-upgrade checks** (`run_test`) are `/health`, `/api/version`, `/api/config`, Ollama `/api/version`, `PRAGMA integrity_check` and the log grep for tracebacks or migration errors. None of them touches the OpenAI connection, and with `model_ids` set no model-list fetch can log a traceback. **R2 holds; the script needs no change.**
+
+### 8.3 Offline (R5), testbed, real allowlist (8 IDs)
+The connection URL was changed through the admin API. Each value is the median of 3 `GET /api/models`, each 1.2 s after the previous one (cache TTL 1 s):
+
+| Upstream | `/api/models` | listed | Phase 03 (`model_ids` set) |
+|---|---|---|---|
+| fake, healthy | 0.12 s | 8 `OR.` + 5 local | 0.10 s |
+| closed port `127.0.0.1:1` | 0.13 s | 8 + 5 | 0.11 s |
+| unroutable `10.255.255.1` | 0.12 s | 8 + 5 | 0.10 s |
+
+- **Local chat** on `qwen3:4b-instruct` with OpenRouter unroutable: HTTP 200 in 3.02 s (model load included).
+- **`OR.` chat with the port closed:** HTTP 500 `Open WebUI: Server Connection Error` in 0.04 s, so it fails fast.
+- R5 is met with the real-size allowlist: an unreachable OpenRouter adds no measurable delay to the picker.
+
+### 8.4 Out of credit or key limit (spend guard), testbed
+OWH manages no spend (ADR-0018). The live key's `/api/v1/key` reports `limit` 50 (USD), `limit_reset` `monthly`, and a `limit_remaining` that falls with `usage` (§6a). We did not exhaust it. Instead, the fake OpenRouter answered chat completions with **HTTP 402** in OpenRouter's error shape (`{"error":{"code":402,"message":…}}`):
+- Open WebUI passed it through: **HTTP 402 in 0.03 s with the upstream's `message` as `detail`**, which the chat shows as the error. With the real OpenRouter, that is its own insufficient-credits text (errors docs, §6).
+- Local models are unaffected. `owh-openrouter set-key` and `status` map a 402 on the key check to "out of credit or the key's spending limit is reached".
+
+### 8.5 Exposure (S6), read-only, 13:45 CST
+Host networking, with no `HOST` in the container env, so uvicorn binds `0.0.0.0:8080` while it runs. Interfaces: `wlo1` 192.168.40.31/24, `tailscale0` 100.103.35.26, Docker bridges. `ufw`: active, `DEFAULT_INPUT_POLICY="DROP"`, no rule for 8080. Open WebUI: 1 user (admin), `ui.enable_signup=false`, `ui.default_user_role="pending"`, `auth.enable_api_keys=false`. Decision: keep as is (ADR-0021, threat model §5).
 
 ## Summary of spec impact
 | Spec item | Finding | Action |

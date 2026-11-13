@@ -24,6 +24,9 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 | ADR-0018 | 2026-11-13 12:45 CST | No spend management in OWH; any key limit is Nick's, set on openrouter.ai (owner question 2) | Accepted | 05 |
 | ADR-0019 | 2026-11-13 12:45 CST | OpenRouter account privacy: training and logging providers allowed (owner question 3) | Accepted | 05 |
 | ADR-0020 | 2026-11-13 13:05 CST | Hidden prompts refuse without a terminal; pre-OWH backup through SQLite's backup API | Accepted | 05 |
+| ADR-0021 | 2026-11-13 13:45 CST | Port 8080 exposure (S6): keep as is, documented; no binding or firewall change | Accepted | 06 |
+| ADR-0022 | 2026-11-13 13:45 CST | Snapshot retention: keep the live pre-apply snapshot, delete testbed snapshots, prune by hand | Accepted | 06 |
+| ADR-0023 | 2026-11-13 13:45 CST | `set-key`/`status` warn 30 days before key expiry and stop showing the masked `label` | Accepted | 06 |
 ---
 
 ## ADR-0001: Project prefix `OWH`
@@ -188,3 +191,22 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 - The pre-OWH backup is taken with SQLite's online backup API inside the container (source opened `mode=ro`), copied out with `docker cp`, chmod 0600, and checked with `PRAGMA integrity_check`.
 **Consequences.** Nick runs the commands that prompt in a separate terminal window. The backup includes every committed write. Both are in the user guide, and the Phase 05 prompt is corrected.
 
+## ADR-0021: Port 8080 exposure (S6): keep as is, documented
+**Recorded.** 2026-11-13 13:45 CST (Phase 06)
+**Context.** Spec S6: Open WebUI uses host networking with no `HOST`, so port 8080 listens on every interface (Wi-Fi, `tailscale0`, Docker bridges) while it runs, and a paid key now sits behind the login. Read-only facts: ufw active, default input DROP, no allow rule for 8080; one Open WebUI user (admin), signup off, API keys off. Tailscale's own firewall rules could not be read without root.
+**Options considered.** (A) keep as is and document it; (B) bind to loopback with `-e HOST=127.0.0.1` (one container recreate; survives `open-webui-upgrade`); (C) an explicit `sudo ufw deny 8080/tcp`. Table in `docs/OWH_THREAT-MODEL.md` §5. Recommended: B if Open WebUI is never used from another device, else C.
+**Decision.** Nick chose A. Nothing was changed on the live container or the firewall.
+**Consequences.** The residual risk (reachability depends on ufw staying on and on the admin password; tailnet path unverified) is recorded in the threat model §7 and the OSMods note. B and C stay one step away if Nick changes his mind.
+
+## ADR-0022: Snapshot retention
+**Recorded.** 2026-11-13 13:45 CST (Phase 06)
+**Context.** Phase 05 left two snapshots in `~/.local/state/owh/snapshots/`: the testbed rehearsal (`webui_url` `http://127.0.0.1:18080`) and the live pre-apply one (`http://127.0.0.1:8080`). Phase 05 assumed both held the key. The Phase 06 sweep showed neither does: a snapshot holds the *prior* connection config, and before OWH that was `api.openai.com` with an empty key. A snapshot taken by a later `apply` after a key rotation would hold the old key.
+**Options considered.** Automatic pruning (keep N); keep everything; keep the live undo point and drop the rest by hand.
+**Decision.** Keep the live pre-apply snapshot indefinitely: it is what `remove` restores (the earliest one per Open WebUI URL). The testbed snapshot was deleted (its Open WebUI no longer exists and `remove` filters it out anyway). Tests and future rehearsals use a temporary `--state-dir`. No automatic pruning: deleting an undo point silently is worse than a few 0600 files. After a rotation, the docs say to delete snapshots newer than the earliest one once the new key works, then revoke the old key.
+**Consequences.** No code change. SECURITY.md and the user guide describe what a snapshot holds and when to delete one.
+
+## ADR-0023: Key expiry warning; no masked `label`
+**Recorded.** 2026-11-13 13:45 CST (Phase 06)
+**Context.** The dedicated key has `expires_at` 2027-11-13 (findings §6a). After that, `OR.` chats fail. OpenRouter's `label` is a masked preview of the key itself, which the scrubber turned into `sk-or-v1-… (12 chars)...275`.
+**Decision.** `set-key` and `status` show `limit`, `limit_remaining`, `limit_reset`, `usage`, `usage_monthly` (set-key) and `expires_at`. When `expires_at` is 30 days away or less, or already past, they print a warning on stderr. `status --json` carries it as `openrouter_key.warning`. Exit codes do not change. A timestamp without a time zone or one that does not parse gives no warning, rather than a guess. `label` is no longer shown.
+**Consequences.** Nick sees the expiry in any `status` run from 2027-10-14 on. Rotation steps are in SECURITY.md.

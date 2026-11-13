@@ -78,3 +78,8 @@ Verified against Open WebUI v0.13.3 and OpenRouter's live API; evidence is in `d
 - **S4 (settled).** Owner question 3: OpenRouter's account privacy settings allow providers that log or train on prompts (ADR-0019). The docs state that `OR.` chats may be logged or used for training by the upstream provider.
 - **§3.5 (updated).** Question 1 answered 2026-11-13 12:16 CST (ADR-0014); questions 2 and 3 answered 2026-11-13 12:45 CST (ADR-0018, ADR-0019).
 
+#### 3.8 Amendments v4 (2026-11-13 13:49 CST, Phase 06)
+- **S6 (settled).** Port 8080 stays on all interfaces under host networking, protected by ufw's default DROP, the login, signup off and API keys off. Nick's choice (ADR-0021); the alternatives are in `docs/OWH_THREAT-MODEL.md` §5.
+- **S3 (clarified).** Pre-apply snapshots hold the *prior* connection config, so they hold a key only if one was configured before; the live one holds none. Retention: keep the earliest snapshot per Open WebUI, delete later ones by hand after a rotation (ADR-0022).
+- **Key expiry (new).** `set-key` and `status` warn when `expires_at` is 30 days away or less (ADR-0023).
+
