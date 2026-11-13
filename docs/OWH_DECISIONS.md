@@ -21,6 +21,9 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 | ADR-0015 | 2026-11-13 12:35 CST | `remove` restores only OWH's slot; snapshots are scoped to the Open WebUI URL | Accepted | 04 |
 | ADR-0016 | 2026-11-13 12:35 CST | CLI secret handling: hidden prompt or stdin/0600 file only, scrub every output line, no redirects | Accepted | 04 |
 | ADR-0017 | 2026-11-13 12:35 CST | `apply` keeps hand-made settings: an existing local task model and extra per-connection fields | Accepted | 04 |
+| ADR-0018 | 2026-11-13 12:45 CST | No spend management in OWH; any key limit is Nick's, set on openrouter.ai (owner question 2) | Accepted | 05 |
+| ADR-0019 | 2026-11-13 12:45 CST | OpenRouter account privacy: training and logging providers allowed (owner question 3) | Accepted | 05 |
+| ADR-0020 | 2026-11-13 13:05 CST | Hidden prompts refuse without a terminal; pre-OWH backup through SQLite's backup API | Accepted | 05 |
 ---
 
 ## ADR-0001: Project prefix `OWH`
@@ -162,3 +165,26 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 - The external task model is set to `qwen3:4b-instruct`, else `qwen3:8b` (ADR-0005), only if the current value is empty or not a local model. A local model that is already set is kept. `--task-model ID` chooses one explicitly. A model missing from Open WebUI's local list is never set, because Open WebUI would silently fall back to the chat model. Without a candidate, `apply` warns and leaves the value alone.
 - Placement follows R1: reuse the slot with the OpenRouter URL, else replace the first `https://api.openai.com/v1` entry with an empty key, else append.
 **Consequences.** A re-apply after a UI tweak is still a no-op. Changing the allowlist updates `model_ids` in place and writes a new snapshot (`mode: update`).
+
+## ADR-0018: No spend management in OWH (owner question 2)
+**Recorded.** 2026-11-13 12:45 CST (Phase 05)
+**Context.** Spec S5 and ADR-0002 assumed the new key would carry a spending limit agreed in this project (proposed default $20/month).
+**Options considered.** $10, $20 or $50 per month on the key; no limit from this project.
+**Decision.** Nick: "no limit... I have spent limits already attached to the API key. So spending is not something we need to manage at the application layer." OWH sets, checks and enforces no spending limit. Whatever limit the key or account has is Nick's, managed on openrouter.ai.
+**Consequences.** `set-key` and `status` still show the key's `limit` field as reported by OpenRouter, for information only. Phase 06's "spend guard" task no longer compares the limit with an agreed value; it only documents what Open WebUI shows when a limit or the credit runs out. The ≤ $0.25 cap on build-time test spend per phase is unchanged. Supersedes the "$20/month" default in spec §3.5 and the "own spending limit" wording in ADR-0002 and S5 (spec Amendments v3).
+
+## ADR-0019: OpenRouter privacy allows training and logging providers (owner question 3)
+**Recorded.** 2026-11-13 12:45 CST (Phase 05)
+**Context.** OpenRouter's account privacy settings decide whether requests may be routed to providers that log or train on prompts. The setting is account-wide, so it also covers the AI Provider Switch key.
+**Options considered.** Block them (proposed default); block them and require ZDR; allow them.
+**Decision.** Allow them (Nick's answer). OWH changes no account setting; this records the choice.
+**Consequences.** All allowlisted models, including the free ones, stay routable. Chats with `OR.` models may be logged or used for training by the upstream provider, so the docs say so (S4). Local models are unaffected.
+
+## ADR-0020: Hidden prompts refuse without a terminal; consistent DB backup
+**Recorded.** 2026-11-13 13:05 CST (Phase 05)
+**Context.** The phase prompt had Nick run `set-key` and `apply` through Claude Code's `!` prefix. That runs without a TTY: `getpass` warned "Can not control echo" and then hit EOF, crashing with a traceback (nothing was read or written). Separately, the live `webui.db` is in WAL mode with recent changes still in `webui.db-wal`, so the prompt's `docker cp webui.db` backup would have missed them.
+**Decision.**
+- `read_secret` turns `getpass.GetPassWarning` into an error and catches `EOFError`; both are a refusal (exit 3) with a hint to use a terminal window, `--from-file` or `--password-stdin`. A secret is never read through getpass's echoing fallback. `set-key` uses the same helper. This extends ADR-0016.
+- The pre-OWH backup is taken with SQLite's online backup API inside the container (source opened `mode=ro`), copied out with `docker cp`, chmod 0600, and checked with `PRAGMA integrity_check`.
+**Consequences.** Nick runs the commands that prompt in a separate terminal window. The backup includes every committed write. Both are in the user guide, and the Phase 05 prompt is corrected.
+

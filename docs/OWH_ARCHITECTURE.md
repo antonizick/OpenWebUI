@@ -2,14 +2,14 @@
 
 Short and kept in sync by every phase. Details of Open WebUI and OpenRouter behaviour are in `docs/OWH_FINDINGS.md` (Phase 03).
 
-## Current (before OWH)
+## Before OWH (until 2026-11-13 13:03 CST)
 ```
 Browser ──> Open WebUI (container `open-webui`, host net, :8080)
               └──> Ollama 127.0.0.1:11434 (local models)
               └──> stored OpenAI connection api.openai.com/v1, empty key (dead leftover)
 ```
 
-## Target (after Phase 05)
+## Live (since 2026-11-13 13:03 CST, Phase 05)
 ```
 Browser ──> Open WebUI (unchanged container, unit, toggle, OCC)
               ├──> Ollama 127.0.0.1:11434          local models, data stays on the laptop

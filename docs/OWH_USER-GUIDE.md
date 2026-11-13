@@ -1,6 +1,6 @@
 # OWH: User Guide (draft)
 
-**Status:** first draft, 2026-11-13 12:36 CST (Phase 04). Phase 05 replaces the steps with the ones actually run on the live instance, and Phase 07 finalises the guide.
+**Status:** steps as run on the live instance, 2026-11-13 13:05 CST (Phase 05). Phase 07 finalises the guide.
 
 `owh-openrouter` adds your OpenRouter account to the local Open WebUI as a second backend next to Ollama. You then pick either a local model or an `OR.`-prefixed OpenRouter model in the model picker. It changes only Open WebUI's stored settings, through its admin API. The container, its unit, `Super+Alt+O`, OCC and `open-webui-upgrade` stay as they are.
 
@@ -12,8 +12,12 @@ owh-openrouter --help
 ```
 Without installing: `uv run --project /home/nick/Work/OpenWebUI owh-openrouter …`.
 
+Run `make install` from the **main checkout**: the launcher hard-codes the directory it was installed from.
+
+**Use a real terminal window.** `set-key`, `apply`, `status` and `remove` read the key or the admin password at a hidden prompt. Without a terminal (for example through Claude Code's `!` prefix) they refuse with exit 3 rather than read a secret that could be echoed. In scripts, use `--from-file` or `--password-stdin`.
+
 ## 2. Store the key: `set-key`
-Create a **new, dedicated** key on openrouter.ai for Open WebUI, with a spending limit. Do not reuse the Claude Code provider key. Then run:
+Create a **new, dedicated** key on openrouter.ai for Open WebUI. Do not reuse the Claude Code provider key. Any spending limit is yours to set there; OWH does not manage spend (ADR-0018). Keys expire (the live one on 2027-11-13), so rotate before then (§7). Then run:
 ```
 owh-openrouter set-key
 ```
@@ -43,7 +47,7 @@ What `apply` does:
 4. It sets the task model for cloud chats to a local model (`qwen3:4b-instruct`, else `qwen3:8b`), so titles, tags and follow-ups never go to OpenRouter (ADR-0005). It keeps a local task model you already chose. `--task-model ID` picks one.
 5. Before the first write, it saves the exact prior values to `~/.local/state/owh/snapshots/<time>.json` (0600). It then writes and re-reads to verify.
 
-Running `apply` again with nothing changed prints "already up to date" and writes nothing. After you edit the allowlist, `apply` updates the model list in place.
+Running `apply` again with nothing changed prints "already up to date; nothing written". No restart of Open WebUI is needed: the change is live at once (refresh the browser tab). After you edit the allowlist, `apply` updates the model list in place.
 
 ## 5. Check: `status`
 ```
@@ -69,6 +73,21 @@ owh-openrouter remove --delete-key       # also delete ~/.config/owh/openrouter.
 
 ## 7. Rotate the key
 Create a new key on openrouter.ai, then `owh-openrouter set-key` (confirm the replacement) and `owh-openrouter apply`. Then revoke the old key on openrouter.ai.
+
+## What was run on the live instance (2026-11-13 13:05 CST, Phase 05)
+1. `set-key` in a terminal window (the `!` attempt refused; see §1). The key is 0600, separate from `~/.config/ai-provider/openrouter.key`, which was untouched.
+2. `make install` from the main checkout.
+3. Rehearsal on the testbed with the real key: `owh-testbed.sh up`; `owh-openrouter --webui-url http://127.0.0.1:18080 apply --email owh-test@localhost --password-stdin < ~/.local/state/owh/testbed/admin-password`; one chat on `OR.z-ai/glm-5.3-flash` ("OK", $0.0000077); `remove`; `owh-testbed.sh down`.
+4. A consistent DB backup through SQLite's backup API (the live DB is in WAL mode, so a plain `docker cp webui.db` misses recent writes):
+   ```
+   docker exec open-webui python3 -c "import sqlite3; s=sqlite3.connect('file:/app/backend/data/webui.db?mode=ro',uri=True); d=sqlite3.connect('/tmp/owh-pre.bak'); s.backup(d)"
+   docker cp open-webui:/tmp/owh-pre.bak ~/.local/share/open-webui-backups/webui.db.<stamp>.pre-owh.bak && docker exec open-webui rm /tmp/owh-pre.bak
+   chmod 600 ~/.local/share/open-webui-backups/webui.db.*.pre-owh.bak
+   ```
+5. `apply --dry-run`, `apply`, `apply` again (no-op), `status`, all in a terminal window.
+6. Checked in the browser: both backends answer from the picker.
+
+**Full restore from that backup** (also discards chats made since): `open-webui-stop`, then `docker run --rm -v open-webui:/data -v ~/.local/share/open-webui-backups:/b alpine sh -c 'cp /b/webui.db.<stamp>.pre-owh.bak /data/webui.db && rm -f /data/webui.db-wal /data/webui.db-shm'`, then `open-webui-start`.
 
 ## Options for every command
 | Option | Meaning |

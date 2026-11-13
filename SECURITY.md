@@ -2,7 +2,7 @@
 
 ## The key
 - The OpenRouter key is a secret. It is **never** written in the repo, logs, shell history, process arguments or `docker inspect` output. The tool reads it only from a hidden prompt or from its 0600 key file.
-- It is stored at `~/.config/owh/openrouter.key` (directory mode 0700, file mode 0600). It is a **new, dedicated** key for Open WebUI, separate from the key Claude Code's provider switch uses (`~/.config/ai-provider/openrouter.key`), and carries its own spending limit set on openrouter.ai.
+- It is stored at `~/.config/owh/openrouter.key` (directory mode 0700, file mode 0600). It is a **new, dedicated** key for Open WebUI, separate from the key Claude Code's provider switch uses (`~/.config/ai-provider/openrouter.key`), Any spending limit is set by Nick on openrouter.ai; OWH does not manage spend (ADR-0018). Account credit is shared with the provider-switch key.
 - Output shows at most the first 9 characters and the length.
 - The admin password for Open WebUI is read at a hidden prompt (or one line on stdin with `--password-stdin`); the session token is kept in memory for one run only. Neither is ever stored.
 - Every line the tool prints or logs passes through a scrubber that removes the key, password and token seen in that run, plus anything shaped like `sk-or-v1-…` or a JWT. HTTP errors carry only a short, scrubbed message (ADR-0016).
@@ -17,7 +17,7 @@ After `apply`, the key also lives in Open WebUI's `webui.db` (config table), and
 The rehearsal testbed (`scripts/owh-testbed.sh`) keeps its random admin password in `~/.local/state/owh/testbed/admin-password` (dir 0700, file 0600), passes its `WEBUI_SECRET_KEY` through a temporary 0600 env file rather than argv, and deletes both on `down`. Testbed runs use only fake keys.
 
 ## Rotating the key
-1. Create a new dedicated key on openrouter.ai (with a spending limit).
+1. Create a new dedicated key on openrouter.ai (set its limit there if you want one).
 2. `owh-openrouter set-key`, then `owh-openrouter apply`.
 3. Revoke the old key on openrouter.ai.
 

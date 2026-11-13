@@ -154,6 +154,17 @@ Fetched 2026-11-13 12:03 CST.
 - `models` multiplies the per-token strings by 1e6. It shows "variable" for negative prices and "free" for `0`, and parses defensively (prices are strings; missing keys are allowed).
 - Map 401 to "key rejected", 402 to "out of credit or key limit reached", and 429 to "rate limited".
 
+### 6a. Confirmed in Phase 05 with the real dedicated key (2026-11-13 13:05 CST)
+`GET /api/v1/key` (values shown only for the non-identifying fields):
+- **Fields present:** `label`, `is_management_key`, `is_provisioning_key`, `limit`, `limit_reset`, `limit_remaining`, `include_byok_in_limit`, `budgets`, `effective_budget`, `usage`, `usage_daily`, `usage_weekly`, `usage_monthly`, `byok_usage`, `byok_usage_daily`, `byok_usage_weekly`, `byok_usage_monthly`, `is_free_tier`, `expires_at`, `creator_user_id`, `organization_id`, `workspace_id`, `allowed_data_regions`, `free_model_daily_requests`, `rate_limit`. Not documented in §6: `is_management_key`, `expires_at`, `creator_user_id`, `organization_id`, `workspace_id`, `allowed_data_regions`.
+- **`label` is not the key's name.** It is OpenRouter's masked key preview (18 characters, `sk-or-v1-` + 3 chars + `...` + the last 3). OWH's scrubber therefore shows it as `sk-or-v1-… (12 chars)...275`. Cosmetic; Phase 06 follow-up.
+- **`limit`** is the dollar cap in USD (`50`), `limit_reset` is `"monthly"`, and `limit_remaining` falls with `usage` (`49.99999234` after one chat costing $0.00000766). The cap is Nick's choice; OWH does not manage it (ADR-0018).
+- **`expires_at`:** `2027-11-13T18:03:06.508Z`. The key stops working after one year unless it is rotated.
+- **Usage accounting:** after one `OR.z-ai/glm-5.3-flash` chat with title, tags and follow-ups enabled, the key's `usage` equalled exactly that chat's cost (`7.66e-06`), and Ollama logged three `POST /api/chat` at the same second. This confirms ADR-0005 against the real OpenRouter.
+- **Chat delivery:** with a `chat_id`, `POST /api/chat/completions` returns `null` and the reply arrives over the websocket; it is saved in the chat (`history.messages[*].usage` includes `cost`).
+- **Testbed cold start:** a new volume downloads about 1.1 GB of embedding model (`sentence-transformers/all-MiniLM-L6-v2`) before `/health` answers; it took about 150 s, so `owh-testbed.sh` now waits up to 300 s.
+- Not done on purpose: provoking a 402 (left to the docs, §6).
+
 ## 7. Proposed model shortlist (task 7, owner question 1)
 From the live `GET /api/v1/models`, **fetched 2026-11-13 12:03 CST**. Prices are $ per million tokens (input / output). **A proposal only; Nick decides** (owner question 1 stays Open). It is not written to `config/openrouter-models.txt`.
 

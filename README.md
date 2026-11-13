@@ -29,7 +29,7 @@ make check     # pytest (coverage gate 90 %), ruff check, ruff format --check, s
 make test-testbed   # OWH_TESTBED=1: apply -> no-op apply -> remove on a throwaway Open WebUI (about 45 s)
 uv run owh-openrouter --help
 ```
-`make check` needs `shellcheck` and `gitleaks` on `PATH`. Run `git config core.hooksPath scripts/git-hooks` once per clone. `make install` writes the launcher `~/.local/bin/owh-openrouter` (an OS modification; not used before Phase 05).
+`make check` needs `shellcheck` and `gitleaks` on `PATH`. Run `git config core.hooksPath scripts/git-hooks` once per clone. `make install` writes the launcher `~/.local/bin/owh-openrouter` (an OS modification, installed in Phase 05; run it from the main checkout).
 
 Rehearsals use a throwaway Open WebUI: `scripts/owh-testbed.sh up|status|token|down|reset` (container `owh-test-owu`, volume `owh-test-owu-data`, `http://127.0.0.1:18080`; `down` removes the container, volume and its state dir). It never touches the live `open-webui`.
 

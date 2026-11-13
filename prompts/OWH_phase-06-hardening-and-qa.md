@@ -13,7 +13,7 @@ Evidence that the deployed setup is safe, survives upgrades and network loss, an
 2. **Secret sweep** (print only file names and counts, never matches): gitleaks over full git history; search for the key prefix in `~/.local/state/owh/owh.log`, `~/.bash_history`, `~/.local/state/open-webui-toggle.log`, `docker inspect open-webui`, `docker logs open-webui` (since OWH apply), the repo, and `~/Documents` (must be 0 hits outside expected stores). Check permissions of every expected store.
 3. **Upgrade survival (R2)** on the testbed: `up` → `apply` (fake or real key; real only with cheap verify) → recreate the container on the same volume with the same recipe `open-webui-upgrade` uses (read the script: `~/.local/bin/open-webui-upgrade`; do not run it against the live instance) → `status` unchanged → `down`. Also confirm by reading the script that its post-upgrade checks do not depend on the OpenAI connection.
 4. **Offline (R5)** on the testbed with the real allowlist: disconnect the upstream (point at a closed port and an unroutable address such as `10.255.255.1`; the testbed uses host networking, ADR-0011), measure `/api/models` time and that local chat works; record against the Phase 03 numbers.
-5. **Spend guard**: confirm via the key-info endpoint (redacted) that the key's limit equals Nick's answer to Q2; document what the user sees in Open WebUI when the limit or account credit is exhausted (from findings/docs; do not exhaust it for real).
+5. **Spend guard**: OWH manages no spend (ADR-0018: any limit is Nick's, on openrouter.ai), so do not check the limit against a value; record the key-info `limit` fields as reported (redacted) and document what the user sees in Open WebUI when the limit or account credit is exhausted (from findings/docs; do not exhaust it for real).
 6. **Code QA**: coverage ≥ 90 %, ruff, shellcheck, dependency licence audit (dev deps only) → THIRD_PARTY_NOTICES; review `owh-openrouter` for error paths that could leak secrets (grep for `print(`/logging of request bodies); fix anything found with tests.
 7. Close every Phase Log follow-up (fix, or defer with a reason and an owner question if Nick must decide).
 
@@ -31,3 +31,10 @@ New features; changing the live container, firewall or Open WebUI env without Ni
 
 ## Phase-specific docs
 `docs/OWH_THREAT-MODEL.md`, SECURITY.md, `docs/OWH_FINDINGS.md` (measurements), OSMods `Open WebUI.md` (verified results, any exposure change), CHANGELOG, ADRs. Then the standard close-out checklist.
+
+## Notes from Phase 05 (2026-11-13 13:05 CST)
+- The key **expires 2027-11-13** (`expires_at` in `/api/v1/key`): make `status` warn when expiry is near, or at least document rotation before then.
+- `/api/v1/key` `label` is a masked key preview, not the key's name, so `status` prints it as `sk-or-v1-… (12 chars)...275`. Consider showing only the last 3 characters, or dropping it.
+- `~/.local/state/owh/snapshots/` holds the rehearsal snapshot (testbed URL) next to the live one; both contain the key. Include them in the retention decision.
+- Commands that prompt must run in a real terminal (ADR-0020); any hands-off test uses `--password-stdin`.
+

@@ -1,4 +1,12 @@
 # OpenRouter model allowlist for owh-openrouter.
 # One OpenRouter model ID per line (for example "vendor/model-name").
 # Lines starting with "#" and blank lines are ignored; duplicates are an error.
-# Phase 03 proposes a shortlist; Nick confirms it in Phase 05.
+# Confirmed by Nick 2026-11-13 12:16 CST (owner question 1, ADR-0014).
+anthropic/claude-sonnet-5.5
+anthropic/claude-haiku-5.5
+google/gemini-4-hydrogen
+openai/gpt-6.1-terra
+google/gemma-4-31b-it:free
+deepseek/deepseek-v4.1-flash-1017
+xiaomi/mimo-v2.6-pro
+z-ai/glm-5.3-flash
