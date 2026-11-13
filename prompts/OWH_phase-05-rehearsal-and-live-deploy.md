@@ -11,7 +11,7 @@
 The live Open WebUI offers the local Ollama models and the allowlisted OpenRouter models side by side, each chat going to the right backend, with a dedicated, spend-limited key; fully documented and reversible.
 
 ## Tasks
-1. **Answers.** Ask Nick for questions 1–3 if open (show the Phase 03 shortlist with prices). Record each answer with a timestamp in the plan (`Answered <TS>: …`) and as ADRs. Write the confirmed IDs into `config/openrouter-models.txt` and run `uv run owh-openrouter models` (all known, prices shown).
+1. **Answers.** Question 1 was answered 2026-11-13 12:16 CST (ADR-0014: eight model IDs, listed in the Owner questions row). Ask Nick for questions 2–3 if still open. Record each answer with a timestamp in the plan (`Answered <TS>: …`) and as ADRs. Write the confirmed IDs into `config/openrouter-models.txt` and run `uv run owh-openrouter models` (all known, prices shown).
 2. **Key.** Nick creates a new key on openrouter.ai named e.g. "Open WebUI (laptop)" with the agreed limit and applies the privacy settings (Q3). Then he runs `! uv run --project /home/nick/Work/OpenWebUI owh-openrouter set-key` himself (hidden prompt). Confirm with redacted output only. Confirm the ai-provider key file was not touched (`stat` mtime unchanged).
 3. **Install.** `make install`; `owh-openrouter --help` works from a new shell.
 4. **Rehearsal** on the testbed with the **real** key and real OpenRouter: `owh-testbed.sh up`, `apply --webui-url http://127.0.0.1:18080`, one chat with the cheapest allowlisted model (prompt "Reply with the word OK.", spend < $0.01), confirm in `/api/models` and the reply; title generated locally (per ADR-0005 evidence method); `remove`; `down`.

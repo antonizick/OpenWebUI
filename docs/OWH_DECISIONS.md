@@ -17,6 +17,7 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 | ADR-0011 | 2026-11-13 12:06 CST | Testbed on host networking bound to `127.0.0.1:18080` | Accepted | 03 |
 | ADR-0012 | 2026-11-13 12:06 CST | Keep Open WebUI's built-in OpenRouter attribution headers; no custom `headers` by default (R9 corrected) | Accepted | 03 |
 | ADR-0013 | 2026-11-13 12:06 CST | Validate the key with OpenRouter `GET /api/v1/key`, never via `/models` or Open WebUI `/openai/verify` | Accepted | 03 |
+| ADR-0014 | 2026-11-13 12:16 CST | OpenRouter allowlist: eight models (owner question 1) | Accepted | between 03 and 04 |
 ---
 
 ## ADR-0001: Project prefix `OWH`
@@ -114,3 +115,21 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 **Context.** OpenRouter's `GET /api/v1/models` returned 200 for an invalid key. Open WebUI's `POST /openai/verify` only proxies `{url}/models`, so it would report any key as valid.
 **Decision.** `set-key` (and `status`) validate the key with OpenRouter `GET https://openrouter.ai/api/v1/key` and `Authorization: Bearer <key>`. A 200 with a `data` object means valid, and 401 means rejected (`{"error":{"code":401,"message":"User not found."}}`). The format check `^sk-or-v1-[0-9a-f]{64}$` (73 characters) runs first.
 **Consequences.** Validation costs nothing (no completion). The label, limit and usage come from the same response, so `status` can show them.
+
+## ADR-0014: OpenRouter allowlist (owner question 1)
+**Recorded.** 2026-11-13 12:16 CST (Nick's answer after Phase 03)
+**Context.** Phase 03 proposed five models with live prices (`docs/OWH_FINDINGS.md` §7). Nick accepted all five and added three.
+**Decision.** The allowlist is these eight IDs. Prices are $/M input / output, fetched 2026-11-13 12:03 CST, all from OpenRouter's live list:
+
+| ID | Role | Context | In | Out |
+|---|---|---:|---:|---:|
+| `anthropic/claude-sonnet-5.5` | strong general | 1,000,000 | 2.00 | 10.00 |
+| `anthropic/claude-haiku-5.5` | cheap, fast | 1,000,000 | 0.10 | 0.50 |
+| `google/gemini-4-hydrogen` | long context, multimodal | 1,048,576 | 1.50 | 7.50 |
+| `openai/gpt-6.1-terra` | coding | 1,050,000 | 1.00 | 5.00 |
+| `google/gemma-4-31b-it:free` | free | 262,144 | 0 | 0 |
+| `deepseek/deepseek-v4.1-flash-1017` | very cheap long input (added by Nick) | 1,048,576 | 0.038 | 0.50 |
+| `xiaomi/mimo-v2.6-pro` | added by Nick | 1,050,000 | 0.435 | 0.87 |
+| `z-ai/glm-5.3-flash` | cheapest output (added by Nick) | 1,048,576 | 0.040 | 0.078 |
+
+**Consequences.** Phase 05 writes these IDs to `config/openrouter-models.txt` and checks them with `owh-openrouter models` (prices are re-fetched then). The free model is rate-limited and its providers may log prompts, depending on owner question 3. `deepseek/deepseek-v4.1-flash-1017` is a dated snapshot and may be retired; `models` flags unknown IDs.

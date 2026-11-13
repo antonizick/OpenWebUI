@@ -1,7 +1,7 @@
 # OWH: OpenWebUI Hybrid Implementation Plan
 
 **Spec:** [`docs/OWH_SPECIFICATION.md`](docs/OWH_SPECIFICATION.md). **Decisions:** [`docs/OWH_DECISIONS.md`](docs/OWH_DECISIONS.md). **Agent rules:** [`CLAUDE.md`](CLAUDE.md). **Shared phase instructions:** [`prompts/OWH_shared-instructions.md`](prompts/OWH_shared-instructions.md)
-**Last updated:** 2026-11-13 12:10 CST (Phase 03, verification spike)
+**Last updated:** 2026-11-13 12:16 CST (owner question 1 answered)
 
 > ⚠️ **Mandatory:** every agent that works on this project keeps this file accurate. **Before doing any other work, set your phase to `🔄 In progress` and commit that change to `main`** (claim protocol: `prompts/OWH_shared-instructions.md` §1a). Other agents read this table from `main`. At the end, set it to `✅ Complete` or `⛔ Blocked` and add a Phase Log entry. See `CLAUDE.md`.
 
@@ -97,7 +97,7 @@ gantt
 ## Owner questions
 | # | Question | Status / proposed default | Needed by |
 |---|---|---|---|
-| 1 | Which OpenRouter models go on the allowlist? | Open (asked 2026-11-13 11:20 CST). **Proposed (Phase 03, prices fetched 2026-11-13 12:03 CST, $/M in/out):** `anthropic/claude-sonnet-5.5` (general, 1M ctx, 2.00/10.00), `anthropic/claude-haiku-5.5` (cheap/fast, 1M, 0.10/0.50), `google/gemini-4-hydrogen` (long-context multimodal, 1,048,576, 1.50/7.50), `openai/gpt-6.1-terra` (coding, 1,050,000, 1.00/5.00), optional free `google/gemma-4-31b-it:free` (262,144, 0/0). Details in `docs/OWH_FINDINGS.md` §7; Nick confirms or edits | Phase 05 |
+| 1 | Which OpenRouter models go on the allowlist? | Answered 2026-11-13 12:16 CST: all five Phase 03 proposals plus three added by Nick, eight in total: `anthropic/claude-sonnet-5.5`, `anthropic/claude-haiku-5.5`, `google/gemini-4-hydrogen`, `openai/gpt-6.1-terra`, `google/gemma-4-31b-it:free`, `deepseek/deepseek-v4.1-flash-1017`, `xiaomi/mimo-v2.6-pro`, `z-ai/glm-5.3-flash` (ADR-0014; prices in `docs/OWH_FINDINGS.md` §7). Phase 05 writes them to `config/openrouter-models.txt` | Phase 05 |
 | 2 | Spending limit for the new dedicated key | Open (asked 2026-11-13 11:20 CST). Proposed default: $20/month, set on openrouter.ai at key creation | Phase 05 |
 | 3 | OpenRouter account privacy: allow providers that log or train on prompts? | Open (asked 2026-11-13 11:20 CST). Proposed default: disallow training/logging providers; ZDR-only off | Phase 05 |
 | 4 | Licence, if the repo is ever made public | Deferred (2026-11-13 11:20 CST). Default: private, "All rights reserved" | Phase 07 |
