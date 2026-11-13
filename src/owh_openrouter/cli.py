@@ -246,9 +246,11 @@ def cmd_set_key(ctx: Ctx) -> int:
         secrets.write_key(ctx.key_path, key)
         say(f"Stored {redact(key)} at {ctx.key_path} (0600)")
         ctx.detail = "stored"
-    for field in ("label", "limit", "limit_remaining", "limit_reset", "usage", "usage_monthly"):
+    for field in openrouter.KEY_FIELDS:
         if field in info:
             say(f"  {field}: {info[field]}")
+    if note := openrouter.expiry_warning(info.get("expires_at")):
+        warn(f"warning: {note}")
     return OK
 
 
@@ -434,9 +436,9 @@ def cmd_status(ctx: Ctx) -> int:
     if stored:
         try:
             info = check_key_live(ctx, stored)
-            report["openrouter_key"] = {
-                k: info.get(k) for k in ("label", "limit", "limit_remaining", "usage") if k in info
-            }
+            report["openrouter_key"] = {k: info[k] for k in openrouter.KEY_FIELDS if k in info}
+            if note := openrouter.expiry_warning(info.get("expires_at")):
+                report["openrouter_key"]["warning"] = note
         except OwhError as e:
             report["openrouter_key"] = {"error": str(e)}
     snaps = snapshot.all_paths(ctx.state_dir, ui.base_url)
@@ -466,7 +468,11 @@ def cmd_status(ctx: Ctx) -> int:
             n = report["models_listed"]
             say(f"model list: {n['openrouter']} OpenRouter, {n['local']} local, {n['total']} total")
         if "openrouter_key" in report:
-            say(f"OpenRouter key: {report['openrouter_key']}")
+            k = dict(report["openrouter_key"])
+            note = k.pop("warning", None)
+            say("OpenRouter key: " + ", ".join(f"{f} {v}" for f, v in k.items()))
+            if note:
+                warn(f"warning: {note}")
         s = report["snapshots"]
         say(f"snapshots: {s['count']}" + (f", earliest {s['earliest']}" if s["earliest"] else ""))
     ctx.detail = "reachable" if report["webui"]["reachable"] else "unreachable"

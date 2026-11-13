@@ -94,7 +94,7 @@ def test_non_json_answers():
 def test_openrouter_key_info_and_errors():
     with FakeOpenRouter() as fake:
         api = fake.url + "/api/v1"
-        assert openrouter.OpenRouter(api, FAKE_KEY).key_info()["label"] == "owh-test"
+        assert openrouter.OpenRouter(api, FAKE_KEY).key_info()["limit"] == 20
         with pytest.raises(openrouter.KeyRejected, match="rejected"):
             openrouter.OpenRouter(api, "sk-or-v1-" + "1" * 64).key_info()
         for status, text in [(402, "credit"), (429, "rate limited")]:
@@ -127,3 +127,23 @@ def test_models_are_fetched_without_the_key():
 )
 def test_per_million(price, shown):
     assert openrouter.per_million(price) == shown
+
+
+@pytest.mark.parametrize(
+    ("expires_at", "expected"),
+    [
+        (None, None),
+        ("", None),
+        ("not a date", None),
+        ("2027-11-13T18:03:06", None),  # no time zone: do not guess
+        ("2027-11-13T18:03:06.508Z", None),  # a year away
+        ("2027-11-01T00:00:00Z", "in 18 days"),
+        ("2027-10-01T00:00:00Z", "expired on"),
+    ],
+)
+def test_expiry_warning(expires_at, expected):
+    from datetime import UTC, datetime
+
+    now = datetime(2027, 10, 13, 12, 0, tzinfo=UTC)
+    got = openrouter.expiry_warning(expires_at, now)
+    assert (got is None) if expected is None else (expected in got)

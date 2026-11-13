@@ -26,7 +26,8 @@ def test_set_key_from_prompt_stores_0600_and_prints_redacted(env):
     assert stat.S_IMODE(env.key_file.stat().st_mode) == 0o600
     assert stat.S_IMODE(env.config.stat().st_mode) == 0o700
     assert "sk-or-v1-… (73 chars)" in env.out
-    assert "label: owh-test" in env.out and "limit: 20" in env.out
+    assert "limit: 20" in env.out and "label" not in env.out
+    assert "expires_at: 2099-01-01" in env.out and "warning" not in env.out
     assert "set-key ok key=sk-or-v1- stored" in env.log
     assert not list(env.config.glob(".openrouter.key.*"))  # temp file renamed away
 
@@ -398,6 +399,28 @@ def test_status_json(env):
     assert r["models_listed"] == {"openrouter": 2, "local": 3, "total": 5}
     assert r["openrouter_key"]["limit"] == 20
     assert r["task_model"]["external_is_local"] is True
+
+
+def test_status_shows_key_fields_without_the_masked_label(env):
+    env.store_key()
+    assert env.run("status", "--no-login") == 0
+    assert "OpenRouter key: limit 20, limit_remaining 19.5, limit_reset monthly" in env.out
+    assert "label" not in env.out and "warning" not in env.out
+
+
+@pytest.mark.parametrize(("days", "text"), [(10, "expires on"), (-1, "expired on")])
+def test_status_and_set_key_warn_when_the_key_expires_soon(env, days, text):
+    from datetime import UTC, datetime, timedelta
+
+    when = datetime.now(UTC) + timedelta(days=days, hours=1)
+    env.orr.expires_at = when.isoformat().replace("+00:00", "Z")
+    env.store_key()
+    assert env.run("status", "--json", "--no-login") == 0
+    assert text in json.loads(env.out)["openrouter_key"]["warning"]
+    assert env.run("status", "--no-login") == 0
+    assert f"warning: the OpenRouter key {text}" in env.err
+    assert env.run("set-key", "--force") == 0
+    assert f"warning: the OpenRouter key {text}" in env.err
 
 
 def test_status_before_apply_and_without_login(env):
