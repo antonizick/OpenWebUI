@@ -28,6 +28,7 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 | ADR-0022 | 2026-11-13 13:45 CST | Snapshot retention: keep the live pre-apply snapshot, delete testbed snapshots, prune by hand | Accepted | 06 |
 | ADR-0023 | 2026-11-13 13:45 CST | `set-key`/`status` warn 30 days before key expiry and stop showing the masked `label` | Accepted | 06 |
 | ADR-0024 | 2026-11-13 17:31 CST | Release: MIT licence and a public repo (owner question 4) | Accepted | 07 |
+| ADR-0025 | 2026-11-14 06:04 CST | Add four OpenRouter image-generation models to the allowlist (twelve in all) | Accepted | post-1.0.0 |
 ---
 
 ## ADR-0001: Project prefix `OWH`
@@ -217,3 +218,9 @@ Lightweight ADRs. Append new decisions at the bottom, and never rewrite history:
 **Context.** Owner question 4 was deferred, with the default "private, All rights reserved". At release, Nick chose to make the repo public and picked MIT (options: MIT, Apache-2.0, public with all rights reserved, stay private).
 **Decision.** LICENSE is the MIT licence; NOTICE and CONTRIBUTING say so; `antonizick/OpenWebUI` is made public. No GitHub release is created (not asked for). Before the change: gitleaks over the full history found no leaks, no key, database, `.env` or backup file is tracked, and the LAN and Tailscale addresses and the admin e-mail were removed from the current files.
 **Consequences.** Git history still holds those addresses and the e-mail (low sensitivity; history is not rewritten without Nick's say-so). The threat model's description of the firewall posture is now public. To go private again: `gh repo edit antonizick/OpenWebUI --visibility private --accept-visibility-change-consequences` (copies already made stay out there).
+
+## ADR-0025: Add four OpenRouter image-generation models to the allowlist
+**Recorded.** 2026-11-14 06:04 CST (post-1.0.0 change, requested by Nick)
+**Context.** Nick asked whether any picker model can create images. None could; OpenRouter lists models with image output. A direct test of `google/gemini-3.1-flash-lite-image` with `modalities: ["image","text"]` returned the picture in `message.images` (a data URL), `content` null, and cost $0.0336 for one picture (1,120 image tokens, billed at the `image_output` price, not the text price shown by `owh-openrouter models`).
+**Decision.** Add `google/gemini-3.1-flash-lite-image`, `google/gemini-3.1-flash-image`, `openai/gpt-5-image-mini` and `openai/gpt-5-image` to `config/openrouter-models.txt` (twelve models). Spend still unmanaged by OWH (ADR-0018). Nick runs `apply` himself in a terminal.
+**Consequences.** Whether Open WebUI 0.13.3 displays the `images` field is untested; the user guide says what to do if it does not. `owh-openrouter models` shows only text prices for these four, so the guide gives the per-picture cost. The pinned allowlist test and docs are updated.

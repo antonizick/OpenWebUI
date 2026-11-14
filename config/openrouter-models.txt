@@ -10,3 +10,8 @@ google/gemma-4-31b-it:free
 deepseek/deepseek-v4.1-flash-1017
 xiaomi/mimo-v2.6-pro
 z-ai/glm-5.3-flash
+# Image-generation models, added 2026-11-14 (ADR-0024 follow-up, ADR-0025). Output is billed per image token, not per text token.
+google/gemini-3.1-flash-lite-image
+google/gemini-3.1-flash-image
+openai/gpt-5-image-mini
+openai/gpt-5-image

@@ -5,7 +5,7 @@
 `owh-openrouter` adds your OpenRouter account to the local Open WebUI as a second backend next to Ollama. You then pick either a local model or an `OR.`-prefixed OpenRouter model in the model picker. It changes only Open WebUI's stored settings, through its admin API. The container, its unit, `Super+Alt+O`, OCC and `open-webui-upgrade` stay as they are.
 
 ## Daily use
-- Open Open WebUI as usual (`Super+Alt+O`, or `http://127.0.0.1:8080`). The model picker lists the local Ollama models and, next to them, the eight allowlisted OpenRouter models with an `OR.` prefix (for example `OR.anthropic/claude-sonnet-5.5`). The picker shows raw IDs, not friendly names.
+- Open Open WebUI as usual (`Super+Alt+O`, or `http://127.0.0.1:8080`). The model picker lists the local Ollama models and, next to them, the twelve allowlisted OpenRouter models with an `OR.` prefix (for example `OR.anthropic/claude-sonnet-5.5`). The picker shows raw IDs, not friendly names.
 - Pick either kind per chat. Each chat goes to the backend of the model chosen; new chats still default to your local model.
 - **Privacy:** an `OR.` chat sends the conversation, attached files, RAG excerpts and web-search results to OpenRouter and the upstream provider, which may log or train (ADR-0019). Use a local model for anything private. Titles, tags and follow-up suggestions are always made by the local task model, so they never go to OpenRouter.
 - **Check spend:** `owh-openrouter status` shows the key's limit, usage and remaining credit, and openrouter.ai Activity shows each call. OWH sets no limit itself (ADR-0018); the key's $50/month limit is yours on openrouter.ai.
@@ -27,7 +27,7 @@ They run on the laptop's RTX 2070 (8 GB), cost nothing per chat and send nothing
 | `nomic-embed-text` | 137M, 274 MB | 2 K | Turns text into vectors for document search (RAG) | **Not a chat model**: it does not appear in the picker and cannot answer questions | 🆓 |
 
 ### OpenRouter models (`OR.` prefix): cloud, paid per use unless marked free
-Your chat goes to OpenRouter and the model's provider. All eight accept tool calls and have a reasoning mode.
+Your chat goes to OpenRouter and the model's provider. The first eight (text models) all accept tool calls and have a reasoning mode. The last four (**image makers**, added 2026-11-14) draw pictures; see "Make images" below.
 
 | Model (picker ID) | Context | Input | Cost in / out per M tokens | Good at | Not good at | Cost |
 |---|---|---|---|---|---|---|
@@ -39,6 +39,10 @@ Your chat goes to OpenRouter and the model's provider. All eight accept tool cal
 | `OR.xiaomi/mimo-v2.6-pro` | 1 M | text, images, video, audio | $0.435 / $0.87 | Xiaomi's flagship (over 1 T parameters) aimed at demanding tasks, with multimodal input, at a low price | Newest and least proven of the set; a Chinese provider | 💲💲 |
 | `OR.z-ai/glm-5.3-flash` | 1 M | text, images, video | $0.04 / $0.078 | Cheapest paid model by far; efficient coding and long agent tasks; good for trying things out | A "flash" tier: expect less depth than Sonnet; a Chinese provider | 💲 |
 | `OR.google/gemma-4-31b-it:free` | 262 K | text, images, video | **free** | Costs nothing; 31B model with a thinking mode and image input | **Rate-limited**; free endpoints may log prompts; replies capped at 32 K tokens; only about a quarter of the context of the others | 🆓 |
+| `OR.google/gemini-3.1-flash-lite-image` ("Nano Banana 2 Lite") | 66 K | text, images | text $0.25 / $1.50; **images $30 / M image tokens, about 3.4¢ per picture (measured)** | Cheapest and fastest image maker; quick drafts and ideas; editing an image you upload | Lower polish than the others; small context (66 K), so not for long chats | 💲💲💲 |
+| `OR.google/gemini-3.1-flash-image` ("Nano Banana 2") | 131 K | text, images | text $0.50 / $3.00; **images $60 / M image tokens, about 7¢ per picture (estimate)** | Google's best image quality at "Flash" speed; generating and editing pictures | About twice the price of Lite per picture | 💲💲💲 |
+| `OR.openai/gpt-5-image-mini` | 400 K | text, images, files | text $2.50 / $2.00; **images $8 / M image tokens (picture cost not measured)** | OpenAI's image maker with good instruction following, including text inside pictures; the cheapest per image token | Newer and less tested here; the picture cost per image is not measured yet | 💲💲💲 |
+| `OR.openai/gpt-5-image` | 400 K | text, images, files | text $10 / $10; **images $40 / M image tokens (picture cost not measured)** | The best of OpenAI's image models for careful instructions and detail | The most expensive way to make a picture; overkill for sketches | 💲💲💲 |
 
 **Roughly what one chat costs** (about 2,000 words in, 700 out; 2 K tokens in, 1 K out): Sonnet 1.4¢, Gemini 1.1¢, GPT Terra 0.7¢, MiMo 0.17¢, Haiku 0.07¢, DeepSeek 0.06¢, GLM 0.016¢, Gemma free. Long conversations cost more because the whole history is sent each turn.
 
@@ -51,8 +55,37 @@ Your chat goes to OpenRouter and the model's provider. All eight accept tool cal
 | A second opinion | `OR.openai/gpt-6.1-terra` |
 | Work with audio, video or a huge file | `OR.google/gemini-4-hydrogen` |
 | Try a cloud model for nothing | `OR.google/gemma-4-31b-it:free` |
+| Make a picture | `OR.google/gemini-3.1-flash-lite-image` (cheapest), then the other three |
 
 Every `OR.` model, free or paid, sends your chat off the laptop (ADR-0019). Local models are the only ones that stay private.
+
+## Make images
+Four of the `OR.` models draw pictures. You ask in plain words; there is no separate image button. This is **not free**: every picture is billed by OpenRouter, and none of this is private (the prompt goes to OpenRouter and Google or OpenAI).
+
+**One-time step (after the allowlist change on 2026-11-14):** the four models are in `config/openrouter-models.txt`, but Open WebUI only learns of them when you run, in a real terminal window:
+```
+owh-openrouter apply --dry-run     # shows the four new model IDs being added
+owh-openrouter apply               # asks for the admin e-mail and password (hidden)
+```
+Then refresh the browser tab. `owh-openrouter status` should now show 12 OpenRouter models.
+
+**To make a picture**
+1. Start a **new chat** and choose `OR.google/gemini-3.1-flash-lite-image` in the model picker (cheapest; try this first).
+2. Type what you want, as you would to a person: *"Draw a lighthouse on a cliff at sunset, watercolour style, wide format."*
+3. The picture appears in the reply. Tell the model what to change ("make the sky stormier", "add a small boat") and it draws a new version. You can also attach a photo with the paperclip and ask for an edit ("put a hat on the dog").
+4. Save it with right-click, "Save image as".
+
+**Tips**
+- Be specific about subject, style (photo, watercolour, flat icon, pixel art), mood, colours and shape (square, wide, tall).
+- For writing inside a picture (a sign, a logo) try `OR.openai/gpt-5-image-mini`; it is the strongest here at following exact instructions. The Gemini models are the cheaper way to draw ideas.
+- Keep image chats short. Every turn resends the whole chat, and the earlier pictures count as input.
+- Use a fresh chat for each new picture idea, and check the cost on openrouter.ai Activity after your first few.
+
+**Cost.** One 1,024-pixel picture on the Lite model cost **$0.0336** (measured on 2026-11-14: 1,120 image tokens at $30 per million). The full Nano Banana 2 is twice the per-token price (about 7¢ a picture, an estimate), and the two OpenAI models are priced per image token as in the table (not measured). Ten pictures on Lite are about 34¢.
+
+**If no picture shows up.** Open WebUI 0.13.3 was not tested with image replies. OpenRouter returns the picture in a separate `images` field of the reply (checked directly on 2026-11-14), and your Open WebUI may or may not draw it. If the reply is blank or only text, you were still billed: tell Claude Code, and the next step is Open WebUI's built-in Image Generation settings (Admin Settings, Images) or a small addition to display the picture. Do not keep retrying, since each try costs money.
+
+**Undo.** Delete the four image lines at the bottom of `config/openrouter-models.txt` and run `owh-openrouter apply`. That removes them from the picker.
 
 ## Add or remove a model
 1. Edit `config/openrouter-models.txt` in the main checkout (one OpenRouter ID per line, `#` comments allowed). Find IDs and prices with `owh-openrouter models --search TEXT`.

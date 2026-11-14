@@ -5,6 +5,7 @@ All notable changes are recorded here. Format: [Keep a Changelog](https://keepac
 ## [Unreleased]
 
 ### Added
+- 2026-11-14 06:04 CST: four image-generation models in the allowlist (`google/gemini-3.1-flash-lite-image`, `google/gemini-3.1-flash-image`, `openai/gpt-5-image-mini`, `openai/gpt-5-image`; ADR-0025); user guide: "Make images" and the four models in the cheat sheet. Measured cost of one Lite picture: $0.0336.
 - 2026-11-13 18:21 CST: user guide: model cheat sheet (local Ollama and OpenRouter models: strengths, weaknesses, prices, free ones highlighted).
 
 

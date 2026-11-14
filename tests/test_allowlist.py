@@ -22,7 +22,8 @@ def test_invalid_characters_rejected(bad):
 
 
 def test_shipped_file_is_the_confirmed_allowlist():
-    # ADR-0014: the eight models Nick confirmed for owner question 1.
+    # ADR-0014: the eight models Nick confirmed for owner question 1, plus the
+    # four image-generation models added 2026-11-14 (ADR-0025).
     path = Path(__file__).parent.parent / "config" / "openrouter-models.txt"
     assert allowlist.load(path) == [
         "anthropic/claude-sonnet-5.5",
@@ -33,4 +34,8 @@ def test_shipped_file_is_the_confirmed_allowlist():
         "deepseek/deepseek-v4.1-flash-1017",
         "xiaomi/mimo-v2.6-pro",
         "z-ai/glm-5.3-flash",
+        "google/gemini-3.1-flash-lite-image",
+        "google/gemini-3.1-flash-image",
+        "openai/gpt-5-image-mini",
+        "openai/gpt-5-image",
     ]
