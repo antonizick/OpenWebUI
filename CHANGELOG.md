@@ -4,6 +4,10 @@ All notable changes are recorded here. Format: [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+### Added
+- 2026-11-13 18:21 CST: user guide: model cheat sheet (local Ollama and OpenRouter models: strengths, weaknesses, prices, free ones highlighted).
+
+
 ## [1.0.0] - 2026-11-13 17:28 CST
 
 ### Added

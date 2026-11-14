@@ -10,6 +10,50 @@
 - **Privacy:** an `OR.` chat sends the conversation, attached files, RAG excerpts and web-search results to OpenRouter and the upstream provider, which may log or train (ADR-0019). Use a local model for anything private. Titles, tags and follow-up suggestions are always made by the local task model, so they never go to OpenRouter.
 - **Check spend:** `owh-openrouter status` shows the key's limit, usage and remaining credit, and openrouter.ai Activity shows each call. OWH sets no limit itself (ADR-0018); the key's $50/month limit is yours on openrouter.ai.
 
+## Model cheat sheet
+Prices and context sizes are the live values from OpenRouter on 2026-11-13 (`owh-openrouter models` shows today's). Strengths and weaknesses come from each vendor's own description on OpenRouter, the model size and the capabilities the model reports. They are **not benchmarks**: try a model on your own task before relying on it.
+
+**Cost key:** 🆓 free · 💲 under $0.50 per million output tokens · 💲💲 $0.50–$5 · 💲💲💲 above $5.
+
+### Local models (Ollama): free, private, offline
+They run on the laptop's RTX 2070 (8 GB), cost nothing per chat and send nothing off the machine. Pick them for anything private.
+
+| Model (picker name) | Size | Context | Good at | Not good at | Cost |
+|---|---|---|---|---|---|
+| `qwen3:8b` (the default "Qwen3 8B (Web)") | 8.2B, 5.2 GB | 41 K | Best local all-rounder; tool use and a "thinking" mode for harder questions; web search | Slower than the small ones; far weaker than the cloud models on hard coding, long documents and facts; no image input | 🆓 |
+| `qwen3:4b-instruct` | 4.0B, 2.5 GB | 262 K | Fast; very long context for its size; tool use. Also the task model that writes titles, tags and follow-ups | Shallower reasoning than the 8B; no image input | 🆓 |
+| `qwen3:1.7b` | 2.0B, 1.4 GB | 41 K | Very fast, tiny; fine for quick rewrites, simple Q&A, testing | Makes more mistakes and loses track of long chats; weak at code and facts | 🆓 |
+| `gemma2:9b` | 9.2B, 5.4 GB | 8 K | Natural, readable writing and summaries; solid general chat | Short memory (8 K context, so long chats and big documents get cut); no tool use or thinking mode; older than the Qwen3 family | 🆓 |
+| `nomic-embed-text` | 137M, 274 MB | 2 K | Turns text into vectors for document search (RAG) | **Not a chat model**: it does not appear in the picker and cannot answer questions | 🆓 |
+
+### OpenRouter models (`OR.` prefix): cloud, paid per use unless marked free
+Your chat goes to OpenRouter and the model's provider. All eight accept tool calls and have a reasoning mode.
+
+| Model (picker ID) | Context | Input | Cost in / out per M tokens | Good at | Not good at | Cost |
+|---|---|---|---|---|---|---|
+| `OR.anthropic/claude-sonnet-5.5` | 1 M | text, images, files | $2.00 / $10.00 | Best all-round pick: building features, fixing bugs, careful writing, well-scoped everyday work | The priciest of the eight (about 20× Haiku); overkill for quick questions | 💲💲💲 |
+| `OR.anthropic/claude-haiku-5.5` | 1 M | text, images, files | $0.10 / $0.50 | Fast and cheap for high-volume work: summaries, quick coding help, browser-style tasks | Less depth than Sonnet on hard, multi-step problems | 💲💲 |
+| `OR.google/gemini-4-hydrogen` | 1 M | text, images, files, **audio, video** | $1.50 / $7.50 | The only one here that takes audio and video; huge inputs; agent workflows and coding at lower cost and latency than Google's larger models | Mid-priced for what it is; a "workhorse" tier, not Google's top model | 💲💲💲 |
+| `OR.openai/gpt-6.1-terra` | 1 M | text, images, files | $1.00 / $5.00 | A second vendor's view; everyday agent, coding and writing work; understanding screenshots | Mid-tier (OpenAI's larger GPT-6.1 Sol is not on the list); replies capped at 128 K tokens | 💲💲 |
+| `OR.deepseek/deepseek-v4.1-flash-1017` | 1 M | text, images | $0.038 / $0.50 | Cheapest long-input option; sparse mixture-of-experts built for cost | A dated snapshot (17 Oct 2026) that will not improve; a Chinese provider, so mind what you send | 💲💲 |
+| `OR.xiaomi/mimo-v2.6-pro` | 1 M | text, images, video, audio | $0.435 / $0.87 | Xiaomi's flagship (over 1 T parameters) aimed at demanding tasks, with multimodal input, at a low price | Newest and least proven of the set; a Chinese provider | 💲💲 |
+| `OR.z-ai/glm-5.3-flash` | 1 M | text, images, video | $0.04 / $0.078 | Cheapest paid model by far; efficient coding and long agent tasks; good for trying things out | A "flash" tier: expect less depth than Sonnet; a Chinese provider | 💲 |
+| `OR.google/gemma-4-31b-it:free` | 262 K | text, images, video | **free** | Costs nothing; 31B model with a thinking mode and image input | **Rate-limited**; free endpoints may log prompts; replies capped at 32 K tokens; only about a quarter of the context of the others | 🆓 |
+
+**Roughly what one chat costs** (about 2,000 words in, 700 out; 2 K tokens in, 1 K out): Sonnet 1.4¢, Gemini 1.1¢, GPT Terra 0.7¢, MiMo 0.17¢, Haiku 0.07¢, DeepSeek 0.06¢, GLM 0.016¢, Gemma free. Long conversations cost more because the whole history is sent each turn.
+
+**Which one?**
+| I want to… | Use |
+|---|---|
+| Keep it private, offline or free | `qwen3:8b` (or `qwen3:4b-instruct` for speed) |
+| A quick answer, cheaply | `OR.anthropic/claude-haiku-5.5` or `OR.z-ai/glm-5.3-flash` |
+| My best answer on code or writing | `OR.anthropic/claude-sonnet-5.5` |
+| A second opinion | `OR.openai/gpt-6.1-terra` |
+| Work with audio, video or a huge file | `OR.google/gemini-4-hydrogen` |
+| Try a cloud model for nothing | `OR.google/gemma-4-31b-it:free` |
+
+Every `OR.` model, free or paid, sends your chat off the laptop (ADR-0019). Local models are the only ones that stay private.
+
 ## Add or remove a model
 1. Edit `config/openrouter-models.txt` in the main checkout (one OpenRouter ID per line, `#` comments allowed). Find IDs and prices with `owh-openrouter models --search TEXT`.
 2. `owh-openrouter models` (unknown IDs are flagged, exit 1), then `owh-openrouter apply --dry-run`, then `owh-openrouter apply`, all in a terminal window. Refresh the browser tab; no restart is needed.
