@@ -69,6 +69,12 @@ owh-openrouter apply               # asks for the admin e-mail and password (hid
 ```
 Then refresh the browser tab. `owh-openrouter status` should now show 12 OpenRouter models.
 
+**Second one-time step: turn off Built-in Tools for each image model.** Open WebUI adds helper tools (for example `get_current_timestamp`) to every chat, and the image models do not support tools. Without this step OpenRouter refuses the request with *"No endpoints found that support tool use. Try disabling \"get_current_timestamp\""* (found on 2026-11-14; nothing is billed for that error). For each of the four image models:
+1. Click your name (bottom left) → **Admin Panel** → **Settings** → **Models**.
+2. Click the model (for example `OR.google/gemini-3.1-flash-lite-image`) to edit it.
+3. Under **Capabilities**, untick **Builtin Tools** (also leave Web Search, Code Interpreter and any tools off). Save.
+4. Start a **new chat** with that model; an old chat keeps its old settings.
+
 **To make a picture**
 1. Start a **new chat** and choose `OR.google/gemini-3.1-flash-lite-image` in the model picker (cheapest; try this first).
 2. Type what you want, as you would to a person: *"Draw a lighthouse on a cliff at sunset, watercolour style, wide format."*
@@ -82,6 +88,8 @@ Then refresh the browser tab. `owh-openrouter status` should now show 12 OpenRou
 - Use a fresh chat for each new picture idea, and check the cost on openrouter.ai Activity after your first few.
 
 **Cost.** One 1,024-pixel picture on the Lite model cost **$0.0336** (measured on 2026-11-14: 1,120 image tokens at $30 per million). The full Nano Banana 2 is twice the per-token price (about 7¢ a picture, an estimate), and the two OpenAI models are priced per image token as in the table (not measured). Ten pictures on Lite are about 34¢.
+
+**If you get "No endpoints found that support tool use"**, the second one-time step above has not been done for that model (or the chat is an old one). Do not turn off tools in the chat's `+` menu only: use the model's Capabilities.
 
 **If no picture shows up.** Open WebUI 0.13.3 was not tested with image replies. OpenRouter returns the picture in a separate `images` field of the reply (checked directly on 2026-11-14), and your Open WebUI may or may not draw it. If the reply is blank or only text, you were still billed: tell Claude Code, and the next step is Open WebUI's built-in Image Generation settings (Admin Settings, Images) or a small addition to display the picture. Do not keep retrying, since each try costs money.
 
