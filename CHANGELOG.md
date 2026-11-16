@@ -10,6 +10,9 @@ All notable changes are recorded here. Format: [Keep a Changelog](https://keepac
 - 2026-11-13 18:21 CST: user guide: model cheat sheet (local Ollama and OpenRouter models: strengths, weaknesses, prices, free ones highlighted).
 
 
+### Fixed
+- 2026-11-16 17:24 CST: `Local Image (RealVisXL)` failed on its first real chat with "request (5976 tokens) exceeds the available context size (4096 tokens)": the model now sets `num_ctx` 8192, and the installer updates an existing model in place (ADR-0026).
+
 ## [1.0.0] - 2026-11-13 17:28 CST
 
 ### Added

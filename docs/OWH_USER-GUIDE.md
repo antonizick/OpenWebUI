@@ -27,7 +27,7 @@ They run on the laptop's RTX 2070 (8 GB), cost nothing per chat and send nothing
 | `qwen3:1.7b` | 2.0B, 1.4 GB | 41 K | Text (LLM) | Very fast, tiny; fine for quick rewrites, simple Q&A, testing | Makes more mistakes and loses track of long chats; weak at code and facts | 🆓 |
 | `gemma2:9b` | 9.2B, 5.4 GB | 8 K | Text (LLM) | Natural, readable writing and summaries; solid general chat | Short memory (8 K context, so long chats and big documents get cut); no tool use or thinking mode; older than the Qwen3 family | 🆓 |
 | `nomic-embed-text` | 137M, 274 MB | 2 K | Embeddings (vectors, not chat) | Turns text into vectors for document search (RAG) | **Not a chat model**: it does not appear in the picker and cannot answer questions | 🆓 |
-| `Local Image (RealVisXL)` (added 2026-11-16) | qwen3:4b-instruct + RealVisXL 5 Lightning (SDXL, 6.9 GB) | 262 K | **Image generation** | Free, private photoreal pictures; about 10 s each once warm. See "Make images locally" | First picture after a pause takes 25–45 s; cannot edit an uploaded photo; poor at readable lettering; less good than the cloud models at following long, exact instructions | 🆓 |
+| `Local Image (RealVisXL)` (added 2026-11-16) | qwen3:4b-instruct + RealVisXL 5 Lightning (SDXL, 6.9 GB) | 262 K | **Image generation** | Free, private photoreal pictures; about 10 s each once warm. See "Make images locally" | First picture after a pause takes 25–50 s; cannot edit an uploaded photo; poor at readable lettering; less good than the cloud models at following long, exact instructions | 🆓 |
 
 ### OpenRouter models (`OR.` prefix): cloud, paid per use unless marked free
 Your chat goes to OpenRouter and the model's provider. The first eight (text models) all accept tool calls and have a reasoning mode. The last four (**image makers**, added 2026-11-14) draw pictures; see "Make images" below.
@@ -108,7 +108,7 @@ Set up 2026-11-16 15:18 CST (ADR-0026). Pictures are drawn on the laptop's GPU b
 3. The picture appears in the reply (1024×1024). Ask for changes ("make it winter", "from further away") and it draws a new version from scratch, not an edit of the last one.
 4. Save it with right-click, "Save image as". Pictures are also kept under `~/.local/share/owh-comfyui/out/`.
 
-**Speed.** The image engine starts on demand: the first picture after a pause takes about **25–45 s** (ComfyUI starts in ~20 s, then loads the 6.9 GB model). After that it takes about **10–12 s** (measured 2026-11-16: 11.7 s with `qwen3:4b-instruct` loaded at the same time). After 10 minutes with no picture requests, the engine stops and gives the GPU memory back to Ollama.
+**Speed.** The image engine starts on demand: the first picture after a pause takes about **25–50 s** (ComfyUI starts in ~20 s, then loads the 6.9 GB model). After that it takes about **10–12 s** (measured 2026-11-16: 11.7 s with `qwen3:4b-instruct` loaded at the same time). After 10 minutes with no picture requests, the engine stops and gives the GPU memory back to Ollama.
 
 **Other local models.** Image generation is now switched on in Admin Settings → Images, so the **Image** toggle in the chat box's integrations menu works with other local models too. `qwen3:8b` already had Image among its default features, so in a `qwen3:8b` chat you can just say "draw …" and it calls the same generator; it does not draw unless asked. `Local Image (RealVisXL)` is the dependable choice, because its instructions always call the generator.
 
@@ -119,7 +119,7 @@ Set up 2026-11-16 15:18 CST (ADR-0026). Pictures are drawn on the laptop's GPU b
 **How it is wired** (all under `config/local-images/` and `scripts/local-images/` in this repo):
 - `owh-comfyui-proxy.socket` (user unit, enabled) listens on `127.0.0.1:8189`. The first connection starts `owh-comfyui-proxy.service` (`systemd-socket-proxyd --exit-idle-time=10min`), which pulls in `owh-comfyui.service`. That runs `~/.local/bin/owh-comfyui-run`: P11's ComfyUI v0.43.0 from `~/.local/share/p11/engine/` on `127.0.0.1:8190`, offline, no custom nodes, with its own output, input, temp and user folders under `~/.local/share/owh-comfyui/`. P11's engine and models are only read, never changed.
 - Open WebUI Admin Settings → Images: engine ComfyUI, URL `http://127.0.0.1:8189`, model `RealVisXL_V5.0_Lightning_fp16.safetensors`, 1024×1024, 5 steps, the workflow `config/local-images/comfyui-realvisxl-lightning.json` (dpmpp_sde/karras, CFG 1.5, SDXL fp16-fix VAE: P11's tuned defaults), with "image prompt generation" on.
-- The workspace model `local-image-realvisxl`: base `qwen3:4b-instruct`, Builtin Tools on, Image on by default, and a system prompt that always calls `generate_image`.
+- The workspace model `local-image-realvisxl`: base `qwen3:4b-instruct`, Builtin Tools on, Image on by default, a system prompt that always calls `generate_image`, and a context of 8,192 tokens (`num_ctx`). Ollama's default 4,096 is too small: the system prompt plus Open WebUI's built-in tool definitions are about 6,000 tokens, which gave *"request (5976 tokens) exceeds the available context size (4096 tokens)"* on the first real chat (fixed 2026-11-16 17:24 CST).
 
 **Install, check, undo**
 ```
@@ -128,6 +128,8 @@ scripts/local-images/owh-local-images.sh status      # is the engine running, GP
 scripts/local-images/owh-local-images.sh uninstall   # removes the units, turns Images off, deletes the picker model
 ```
 The DB backup taken before the live change is `~/.local/share/open-webui-backups/webui.db.20261116-1512.pre-local-images.bak` (made with the backup command in "What was run on the live instance" below). `uninstall` leaves P11, its models and the pictures already made in place.
+
+**If you see "exceeds the available context size"**, the model's `num_ctx` was lost (for example after editing the model in Admin Settings): rerun `owh-local-images.sh install`, which restores it.
 
 **If no picture appears:** run `owh-local-images.sh status`. Check `journalctl --user -u owh-comfyui -n 50` for the engine log (an exit code of 75 means P11 held the GPU), and `docker logs open-webui 2>&1 | grep -i comfy` for Open WebUI's side.
 

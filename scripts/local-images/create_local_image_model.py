@@ -1,4 +1,4 @@
-"""Add (or remove) the "Local Image (RealVisXL)" model in Open WebUI's model picker.
+"""Add, update or remove the "Local Image (RealVisXL)" model in Open WebUI's model picker.
 
 Runs inside the container with PYTHONPATH=/app/backend, through Open WebUI's own
 `Models` API so the version history and access rows are written as the UI would.
@@ -30,7 +30,7 @@ FORM = ModelForm(
     name="Local Image (RealVisXL)",
     meta={
         "description": "Free, private picture maker on this laptop: qwen3:4b-instruct writes "
-        "the prompt, RealVisXL 5 Lightning (P11's ComfyUI) draws it. First picture ~25-45 s, "
+        "the prompt, RealVisXL 5 Lightning (P11's ComfyUI) draws it. First picture ~25-50 s, "
         "then ~10 s.",
         "capabilities": {
             "vision": False,
@@ -47,8 +47,11 @@ FORM = ModelForm(
         "defaultFeatureIds": ["image_generation"],
         "tags": [{"name": "local"}, {"name": "image"}],
     },
-    params={"system": SYSTEM},
-    commit_message="OWH: local image model (ComfyUI RealVisXL)",
+    # Ollama's default 4,096-token context is too small: the system prompt plus Open WebUI's
+    # built-in tool definitions come to ~6,000 tokens (2026-11-16, "request exceeds the
+    # available context size"). 8,192 leaves room for a chat and still shares the GPU with SDXL.
+    params={"system": SYSTEM, "num_ctx": 8192},
+    commit_message="OWH: local image model (ComfyUI RealVisXL), num_ctx 8192",
 )
 
 
@@ -68,7 +71,12 @@ async def main() -> None:
         print("removed" if removed else "not present")
         return
     if existing:
-        print(f"{MODEL_ID} exists; not changed")
+        same_params = existing.params.model_dump() == FORM.params.model_dump()
+        if same_params and existing.meta.description == FORM.meta.description:
+            print(f"{MODEL_ID} is up to date")
+        else:
+            await Models.update_model_by_id(MODEL_ID, FORM, user_id=admin_id())
+            print(f"updated {MODEL_ID}")
         return
     model = await Models.insert_new_model(FORM, admin_id())
     print(f"created {model.id} ({model.name})")
