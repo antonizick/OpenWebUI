@@ -1,0 +1,19 @@
+{
+  "3": {"class_type": "KSampler", "_meta": {"title": "KSampler"},
+        "inputs": {"seed": 0, "steps": 5, "cfg": 1.5, "sampler_name": "dpmpp_sde", "scheduler": "karras", "denoise": 1,
+                   "model": ["4", 0], "positive": ["6", 0], "negative": ["7", 0], "latent_image": ["5", 0]}},
+  "4": {"class_type": "CheckpointLoaderSimple", "_meta": {"title": "Load Checkpoint"},
+        "inputs": {"ckpt_name": "RealVisXL_V5.0_Lightning_fp16.safetensors"}},
+  "5": {"class_type": "EmptyLatentImage", "_meta": {"title": "Empty Latent Image"},
+        "inputs": {"width": 1024, "height": 1024, "batch_size": 1}},
+  "6": {"class_type": "CLIPTextEncode", "_meta": {"title": "Positive prompt"},
+        "inputs": {"text": "Prompt", "clip": ["4", 1]}},
+  "7": {"class_type": "CLIPTextEncode", "_meta": {"title": "Negative prompt"},
+        "inputs": {"text": "lowres, blurry, deformed, bad anatomy, watermark, text artifacts", "clip": ["4", 1]}},
+  "10": {"class_type": "VAELoader", "_meta": {"title": "SDXL VAE (fp16 fix)"},
+         "inputs": {"vae_name": "sdxl_vae.safetensors"}},
+  "8": {"class_type": "VAEDecode", "_meta": {"title": "VAE Decode"},
+        "inputs": {"samples": ["3", 0], "vae": ["10", 0]}},
+  "9": {"class_type": "SaveImage", "_meta": {"title": "Save Image"},
+        "inputs": {"filename_prefix": "owh", "images": ["8", 0]}}
+}

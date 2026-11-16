@@ -1,0 +1,8 @@
+[Unit]
+Description=OWH local image engine socket (127.0.0.1:8189, starts ComfyUI on demand)
+
+[Socket]
+ListenStream=127.0.0.1:8189
+
+[Install]
+WantedBy=sockets.target

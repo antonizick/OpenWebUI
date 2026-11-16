@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# OWH local images: run Project1111's installed ComfyUI (read-only reuse of its engine and
+# models) for Open WebUI, on 127.0.0.1:8190 behind the socket-activated proxy on :8189.
+# Holds P11's advisory GPU lock so P11 Studio and this never load SDXL at the same time.
+set -euo pipefail
+engine="$HOME/.local/share/p11/engine"
+data="$HOME/.local/share/owh-comfyui"
+lock="$HOME/.cache/p11/gpu.lock"
+mkdir -p "$(dirname "$lock")" "$data"/{out,in,tmp,user}
+cd "$engine/ComfyUI"
+exec flock -w 20 -E 75 "$lock" "$engine/venv/bin/python" main.py \
+  --listen 127.0.0.1 --port 8190 \
+  --disable-auto-launch --offline --disable-product-tips --disable-all-custom-nodes \
+  --preview-method none \
+  --extra-model-paths-config "$engine/extra_model_paths.yaml" \
+  --output-directory "$data/out" --input-directory "$data/in" \
+  --temp-directory "$data/tmp" --user-directory "$data/user" \
+  --database-url "sqlite:///$data/user/comfyui.db"

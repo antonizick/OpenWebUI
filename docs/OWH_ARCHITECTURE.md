@@ -18,6 +18,15 @@ Browser ──> Open WebUI (unchanged container, unit, toggle, OCC)
 ```
 Background tasks (titles, tags, follow-ups, search queries) run on a local model (`TASK_MODEL_EXTERNAL`), so only the chat completion goes to OpenRouter (ADR-0005, Accepted in Phase 03). Because the allowlist is applied as `model_ids`, Open WebUI never fetches OpenRouter's model list, so the picker does not wait on OpenRouter when it is offline.
 
+## Local images (since 2026-11-16 15:18 CST, ADR-0026)
+```
+Open WebUI ──(Images: ComfyUI engine)──> 127.0.0.1:8189 owh-comfyui-proxy.socket (user unit)
+              └─ systemd-socket-proxyd, exits after 10 idle min ──> 127.0.0.1:8190 owh-comfyui.service
+                   └─ P11's ComfyUI v0.43.0 + RealVisXL 5 Lightning (read-only), under P11's GPU flock
+picker model `local-image-realvisxl` = qwen3:4b-instruct + system prompt + Image on by default
+```
+Files: `config/local-images/` (units, run script, ComfyUI workflow), `scripts/local-images/` (installer, two helpers run inside the container). Pictures land in `~/.local/share/owh-comfyui/out/`.
+
 ## Real endpoints (Open WebUI 0.13.3, OpenRouter; see `docs/OWH_FINDINGS.md`)
 | Purpose | Endpoint |
 |---|---|
@@ -38,7 +47,7 @@ Testbed for rehearsals: `scripts/owh-testbed.sh` (container `owh-test-owu`, volu
 | Allowlist | `config/openrouter-models.txt` | in the repo, one model ID per line |
 | Pre-apply snapshots | `~/.local/state/owh/snapshots/*.json` (0600 in 0700; hold the prior connection config, so a prior key if there was one; retention ADR-0022) | one per writing `apply`, tagged with the Open WebUI URL; `remove` uses the earliest one for that URL (ADR-0015) |
 | Action log | `~/.local/state/owh/owh.log` (0600) | one line per run, no secrets (ADR-0016) |
-| Open WebUI config | `webui.db` config table, via the admin API only | never edited directly |
+| Open WebUI config | `webui.db` config table, via the admin API only | never edited directly by `owh-openrouter`; the local-images installer writes the Images rows directly (ADR-0026) |
 | Launcher | `~/.local/bin/owh-openrouter` (`make install`) | an OS modification, in OSMods |
 
 Nothing in the container, its systemd unit, `Super+Alt+O`, OCC or `open-webui-upgrade` changes. The live Open WebUI is changed only in Phase 05; earlier phases use the throwaway testbed.

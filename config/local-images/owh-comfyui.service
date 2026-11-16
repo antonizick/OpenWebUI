@@ -1,0 +1,12 @@
+[Unit]
+Description=OWH local image engine (P11's ComfyUI for Open WebUI, 127.0.0.1:8190)
+StopWhenUnneeded=yes
+
+[Service]
+Type=simple
+Environment=PYTHONUNBUFFERED=1 HF_HUB_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1 TRANSFORMERS_OFFLINE=1 DO_NOT_TRACK=1 COMFYUI_DISABLE_PRODUCT_TIPS=1
+ExecStart=%h/.local/bin/owh-comfyui-run
+# Start counts as done only once ComfyUI answers, so the proxy never connects too early.
+ExecStartPost=/usr/bin/bash -c 'for i in $(seq 120); do curl -sf -o /dev/null http://127.0.0.1:8190/system_stats && exit 0; sleep 0.5; done; exit 1'
+TimeoutStartSec=90
+TimeoutStopSec=20

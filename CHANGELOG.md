@@ -5,6 +5,7 @@ All notable changes are recorded here. Format: [Keep a Changelog](https://keepac
 ## [Unreleased]
 
 ### Added
+- 2026-11-16 15:18 CST: free, private local image generation (ADR-0026): Open WebUI's Images set to ComfyUI with RealVisXL 5 Lightning, run on P11's installed ComfyUI and started on demand by user units on `127.0.0.1:8189` (stops after 10 idle minutes; shares P11's GPU lock); picker model `Local Image (RealVisXL)`; `scripts/local-images/owh-local-images.sh install|uninstall|status`, the units and workflow in `config/local-images/`; user guide "Make images locally".
 - 2026-11-14 06:04 CST: four image-generation models in the allowlist (`google/gemini-3.1-flash-lite-image`, `google/gemini-3.1-flash-image`, `openai/gpt-5-image-mini`, `openai/gpt-5-image`; ADR-0025); user guide: "Make images" and the four models in the cheat sheet. Measured cost of one Lite picture: $0.0336.
 - 2026-11-13 18:21 CST: user guide: model cheat sheet (local Ollama and OpenRouter models: strengths, weaknesses, prices, free ones highlighted).
 

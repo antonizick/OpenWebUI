@@ -1,0 +1,7 @@
+[Unit]
+Description=OWH local image engine proxy (stops ComfyUI after 10 idle minutes)
+Requires=owh-comfyui.service owh-comfyui-proxy.socket
+After=owh-comfyui.service
+
+[Service]
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd --exit-idle-time=10min 127.0.0.1:8190
